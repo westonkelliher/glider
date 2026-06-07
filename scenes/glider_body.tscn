@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://cjhkvk3egmt6j"]
+
+[ext_resource type="Script" uid="uid://daywr6oxhdjft" path="res://scripts/glider_body.gd" id="1_kiolu"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aylop"]
+albedo_color = Color(0.8784314, 0.6784314, 0.6431373, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_qut1m"]
+material = SubResource("StandardMaterial3D_aylop")
+size = Vector3(0.5, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_260ag"]
+albedo_color = Color(0.64, 0.4581333, 0.288, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_1mgfi"]
+material = SubResource("StandardMaterial3D_260ag")
+size = Vector3(1.6, 1.4, 0.1)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_aylop"]
+height = 0.2
+
+[node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
+script = ExtResource("1_kiolu")
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=8097921]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+mesh = SubResource("PrismMesh_qut1m")
+
+[node name="Wing" type="MeshInstance3D" parent="Mesh" unique_id=2131678133]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, -0.04, -0.15)
+mesh = SubResource("PrismMesh_1mgfi")
+
+[node name="Shape" type="CollisionShape3D" parent="." unique_id=1877100831]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+shape = SubResource("CylinderShape3D_aylop")

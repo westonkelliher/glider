@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://cjvqn1xv182j4"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_ryoud"]
+
+[sub_resource type="Shader" id="Shader_1eb4u"]
+code = "shader_type spatial;
+
+// World-space checkerboard on the X,Z plane. 1m x 1m squares.
+// Pattern is keyed to world coords (via MODEL_MATRIX), so it stays
+// aligned to the world grid regardless of mesh placement, and Y is
+// ignored -- terrain slopes stretch the squares in 3D.
+
+uniform vec3 light_green : source_color = vec3(1,1,1);
+uniform vec3 dark_green : source_color = vec3(0.15, 0.35, 0.15);
+uniform float square_size = 1.0;
+
+varying vec3 world_pos;
+
+void vertex() {
+	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	vec2 cell = floor(world_pos.xz / square_size);
+	float checker = mod(cell.x + cell.y, 2.0);
+	ALBEDO = mix(dark_green, light_green, checker);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cgngl"]
+render_priority = 0
+shader = SubResource("Shader_1eb4u")
+shader_parameter/light_green = Color(0.5, 0.7, 0.27, 1)
+shader_parameter/dark_green = Color(0.15, 0.35, 0.15, 1)
+shader_parameter/square_size = 1.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_wd3ws"]
+material = SubResource("ShaderMaterial_cgngl")
+size = Vector2(500, 500)
+
+[node name="Floor" type="StaticBody3D" unique_id=1291254760]
+
+[node name="Shape" type="CollisionShape3D" parent="." unique_id=1898934245]
+shape = SubResource("WorldBoundaryShape3D_ryoud")
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=922797180]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8520374, 4.76807, -14.119179)
+mesh = SubResource("PlaneMesh_wd3ws")

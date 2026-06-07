@@ -1,13 +1,29 @@
+@tool
 extends Node3D
 ## Procedurally scatters trees (cylinder trunk + cone foliage) and rocks
 ## (low-poly spheres embedded in the ground) across the floor plane.
+## Runs in the editor too (@tool); spawned nodes are runtime-only (no owner),
+## so they preview live but are never baked into the scene file.
 
-@export var area_size: float = 200.0
-@export var tree_count: int = 120
-@export var rock_count: int = 80
-@export var rng_seed: int = 1337
+@export var area_size: float = 200.0:
+	set(v): area_size = v; _regenerate()
+@export var tree_count: int = 120:
+	set(v): tree_count = v; _regenerate()
+@export var rock_count: int = 80:
+	set(v): rock_count = v; _regenerate()
+@export var rng_seed: int = 1337:
+	set(v): rng_seed = v; _regenerate()
 
 func _ready() -> void:
+	_regenerate()
+
+func _regenerate() -> void:
+	if not is_inside_tree():
+		return
+	# Clear previously generated children before re-scattering.
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = rng_seed
 	_scatter(rng, tree_count, _make_tree)

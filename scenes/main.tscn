@@ -1,12 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://bglider0main00"]
+[gd_scene format=3 uid="uid://bxfnh7s3mhwgd"]
 
-[ext_resource type="Script" path="res://scripts/world.gd" id="1_world"]
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
-size = Vector2(1000, 1000)
-
-[sub_resource type="StandardMaterial3D" id="Mat_floor"]
-albedo_color = Color(0.25, 0.45, 0.22, 1)
+[ext_resource type="Script" uid="uid://cnr0jq8ny1tis" path="res://environment/world.gd" id="1_world"]
+[ext_resource type="PackedScene" uid="uid://cjhkvk3egmt6j" path="res://scenes/glider_body.tscn" id="2_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://cjvqn1xv182j4" path="res://environment/floor.tscn" id="3_sugp2"]
+[ext_resource type="Script" uid="uid://bq7m5mll05g3f" path="res://scripts/camera_follow.gd" id="4_camfollow"]
 
 [sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
 
@@ -20,22 +17,25 @@ ambient_light_source = 3
 ambient_light_energy = 0.4
 tonemap_mode = 2
 
-[node name="Main" type="Node3D"]
+[node name="Main" type="Node3D" unique_id=2117287303]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=499362538]
 environment = SubResource("Env_res")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=905326208]
 transform = Transform3D(0.7, -0.5, 0.5, 0, 0.7, 0.7, -0.7, -0.5, 0.5, 0, 80, 0)
 shadow_enabled = true
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1134521825 node_paths=PackedStringArray("target")]
 transform = Transform3D(1, 0, 0, 0, 0.87, 0.5, 0, -0.5, 0.87, 0, 12, 22)
 current = true
+script = ExtResource("4_camfollow")
+target = NodePath("../GliderBody")
 
-[node name="Floor" type="MeshInstance3D" parent="."]
-mesh = SubResource("PlaneMesh_floor")
-material_override = SubResource("Mat_floor")
-
-[node name="World" type="Node3D" parent="."]
+[node name="World" type="Node3D" parent="." unique_id=375692207]
 script = ExtResource("1_world")
+
+[node name="GliderBody" parent="." unique_id=786574907 instance=ExtResource("2_0wfyh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 10, 12.590519)
+
+[node name="Floor" parent="." unique_id=1291254760 instance=ExtResource("3_sugp2")]
