@@ -47,5 +47,5 @@ func _physics_process(delta: float) -> void:
 	if target == null:
 		return
 	var to_target := target.position - position
-	var sped := 0.2 + to_target.length()*5.0
+	var sped := 0.2 + 3.0 * to_target.length() + 2.0 * to_target.length()**2
 	position = position.move_toward(target.position, sped * delta)
