@@ -35,6 +35,7 @@ const PH_MARGIN := 0.1
 const POT_SPEED_CATCHUP_MULT := 2.0
 #const POT_DIR_CATCHUP := 2.0 # radians / s
 const POT_DIR_CATCHUP_MULT := 0.15
+const DRAG := 1.5 # pot-height bled per (speed * misalignment) per second
 ## Pot Height Equation:
 # v1 at h1,ph1 allows us to get to ph1 under g deceleration:
 # dH = v1
@@ -83,9 +84,13 @@ func _physics_process(delta: float) -> void:
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir 
 	var new_velocity := new_speed * new_dir
 	
-	## grav for no stuck (100% gravity when speed is 0)
-	var dv_gravity := G*Vector3.DOWN * (1/(1+current_speed)) * delta
+	## forces
+	# grav for no stuck (100% gravity when speed is 0)
+	var dv_gravity := G*Vector3.DOWN * (2/(2+current_speed)) * delta
 	new_velocity += dv_gravity
+	# drag: bleed pot energy when moving crosswise to the nose (1 - alignment)
+	var alignment_drag_factor := (1.0 - nose_dir.dot(current_dir))**2
+	pot_height -= DRAG * current_speed * alignment_drag_factor * delta
 	
 	## velocity
 	velocity = new_velocity
