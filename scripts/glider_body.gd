@@ -1,10 +1,12 @@
 extends CharacterBody3D
 
 
-const SPEED = 5.0
+const TURN_SPEED = 2.5  # radians/sec
 const JUMP_VELOCITY = 4.5
+const G := 9.8
 
 var pot_height := 0.0
+var PH_MARGIN := 0.1
 ## Pot Height Equation:
 # v1 at h1,ph1 allows us to get to ph1 under g deceleration:
 # dH = v1
@@ -12,26 +14,30 @@ var pot_height := 0.0
 
 func _physics_process(delta: float) -> void:
 	
-	if pot_height < position.y:
+	if position.y > pot_height:
 		pot_height = position.y
 	
-	# Add the gravity.
-	if not is_on_floor():
-		velocity += get_gravity() * delta * 0.0
-
-	# Handle jump.
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
-
-	# Get the input direction and handle the movement/deceleration.
-	# As good practice, you should replace UI actions with custom gameplay actions.
-	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	if direction:
-		velocity.x = direction.x * SPEED
-		velocity.z = direction.z * SPEED
+	var d_h := pot_height - position.y
+	
+	var speed := 0.0
+	if d_h < PH_MARGIN:
+		speed = 0.2
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
-		velocity.z = move_toward(velocity.z, 0, SPEED)
+		speed = sqrt(d_h*G*2) # solved for speed in terms of d_h
+	
+	# Left/right rotate (yaw) the character; forward/back drive along facing.
+	var yaw := Input.get_axis("move_right", "move_left")
+	rotation.y += yaw * TURN_SPEED * delta
+
+	var pitch := Input.get_axis("move_forward", "move_back")
+	rotation.x += pitch * TURN_SPEED * delta
+	# TODO for claude: clamp to 89 degrees and -89 degrees then remove this comment
+	
+	var direction := (transform.basis * Vector3.FORWARD).normalized()
+	velocity.x = direction.x * speed
+	velocity.z = direction.z * speed
+	velocity.y = direction.y * speed
+	
+	position.y -= 0.2 * delta
 
 	move_and_slide()

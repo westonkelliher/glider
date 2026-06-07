@@ -1,0 +1,3 @@
+[gd_scene format=3 uid="uid://0vrela2hy6em"]
+
+[node name="Ground" type="StaticBody3D" unique_id=851902149]
