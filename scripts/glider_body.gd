@@ -7,12 +7,24 @@ const G := 9.8
 
 
 ## Ailerons
-const AIL_PITCH_SPEED := 7.0 # radians/s
-const PITCH_MULT := 3.5
-# TODO: yaw and roll
+# Pitch
+const AIL_PITCH_SPEED := 7.0 # 1/s: how fast a surface eases toward its target
+const PITCH_MULT := 3.5 # craft turn authority per unit of deflection
+# Roll
+const AIL_ROLL_SPEED := 5.0
+const ROLL_MULT := 5.0
+# Yaw
+const AIL_YAW_SPEED := 7.0
+const YAW_MULT := 2.0
+#
+const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
+#
 var ail_pitch := 0.0
 var ail_pitch_target := 0.0
-# TODO: yaw and roll
+var ail_roll := 0.0
+var ail_roll_target := 0.0
+var ail_yaw := 0.0
+var ail_yaw_target := 0.0
 
 
 ## Pot Height
@@ -32,24 +44,18 @@ func _physics_process(delta: float) -> void:
 	
 	var speed := 0.0
 	if d_h < PH_MARGIN:
-		speed = 0.2
+		speed = 0.1
 	else:
 		speed = sqrt(d_h*G*2) # solved for speed in terms of d_h
 	
 	# adjust ailerons
 	adjust_ailerons(delta)
-	
-	# L/R yaws by default, but rolls while air_roll is held (RL-style).
-	# Pitch is always about the craft's own right axis. All local-axis based,
-	# so control is relative to the glider's orientation, not the world axes.
-	var lr := Input.get_axis("move_right", "move_left")
-	if Input.is_action_pressed("air_roll"):
-		rotate_object_local(Vector3.BACK, lr * TURN_SPEED * delta)
-	else:
-		rotate_object_local(Vector3.UP, lr * TURN_SPEED * delta)
 
-	#var pitch := Input.get_axis("move_forward", "move_back")
-	rotate_object_local(Vector3.RIGHT, ail_pitch * PITCH_MULT * delta)
+	# The smoothed control surfaces drive the craft's rotation about its own
+	# local axes, so control stays relative to the glider's orientation.
+	rotate_object_local(Vector3.RIGHT, ail_pitch * PITCH_MULT * delta) # pitch
+	rotate_object_local(Vector3.BACK, ail_roll * ROLL_MULT * delta)    # roll
+	rotate_object_local(Vector3.UP, ail_yaw * YAW_MULT * delta)        # yaw
 	
 	var facing_dir := (transform.basis * Vector3.FORWARD).normalized()
 	var v_dir := velocity.normalized()
@@ -63,13 +69,22 @@ func _physics_process(delta: float) -> void:
 
 
 func adjust_ailerons(delta: float) -> void:
+	# Pitch from F/B. L/R rolls while air_roll is held, otherwise yaws (RL-style).
 	ail_pitch_target = Input.get_axis("move_forward", "move_back")
+	var lr := Input.get_axis("move_right", "move_left")
+	if Input.is_action_pressed("air_roll"):
+		ail_roll_target = lr
+		ail_yaw_target = 0.0
+	else:
+		ail_yaw_target = lr
+		ail_roll_target = 0.0
+
 	ail_pitch = move_toward(ail_pitch, ail_pitch_target, AIL_PITCH_SPEED * delta)
-	$Ailerons/Pitch.rotation.x = ail_pitch*-0.9
-	# TODO: r and y
+	ail_roll = move_toward(ail_roll, ail_roll_target, AIL_ROLL_SPEED * delta)
+	ail_yaw = move_toward(ail_yaw, ail_yaw_target, AIL_YAW_SPEED * delta)
 
-
-#func set_aileron_pitch_target(pitch: float) -> void:
-	#ail_pitch_target = pitch
-	
-# TODO: y and r
+	# Deflect each visual surface about its correct local hinge axis.
+	$Ailerons/Pitch.rotation.x = ail_pitch * -SURFACE_DEFLECT  # elevator (both together)
+	$Ailerons/LRoll.rotation.x = ail_roll * SURFACE_DEFLECT    # ailerons deflect
+	$Ailerons/RRoll.rotation.x = ail_roll * -SURFACE_DEFLECT   # oppositely
+	$Ailerons/Yaw.rotation.z = ail_yaw * SURFACE_DEFLECT       # rudder
