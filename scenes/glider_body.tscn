@@ -20,7 +20,6 @@ size = Vector3(1.6, 1.4, 0.1)
 height = 0.2
 
 [node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
-rotation_order = 3
 script = ExtResource("1_kiolu")
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=8097921]
