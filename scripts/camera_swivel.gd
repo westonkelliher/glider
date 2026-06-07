@@ -6,14 +6,19 @@ extends Camera3D
 
 @export var target: Node3D
 ## Local offset from the pivot: behind (+Z) and above (+Y).
-@export var offset: Vector3 = Vector3(0.0, 8.0, 16.0)
+@export var offset: Vector3 = Vector3(0.0, 4.0, 8.0)
 
-func _physics_process(_delta: float) -> void:
+const YAW_SNAP := 10.0
+
+func _physics_process(delta: float) -> void:
 	if target == null:
 		return
 	# Swivel pivot == player's Y rotation, applied instantly.
 	var yaw: float = target.rotation.y
 	# Position relative to the rig (rig sits at the player's position).
-	position = Basis(Vector3.UP, yaw) * offset
+	var t_position := Basis(Vector3.UP, yaw) * offset
+	var p_delt := t_position - position
+	var snap_speed := 0.1 + p_delt.length()*YAW_SNAP
+	position = position.move_toward(t_position, snap_speed * delta)
 	# Look at the pivot (rig origin == player position).
 	look_at(get_parent().global_position, Vector3.UP)

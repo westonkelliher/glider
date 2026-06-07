@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://cnr0jq8ny1tis" path="res://environment/world.gd" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://cjhkvk3egmt6j" path="res://scenes/glider_body.tscn" id="2_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://cjvqn1xv182j4" path="res://environment/floor.tscn" id="3_sugp2"]
-[ext_resource type="Script" path="res://scripts/camera_rig.gd" id="4_camrig"]
-[ext_resource type="Script" path="res://scripts/camera_swivel.gd" id="5_camswivel"]
+[ext_resource type="Script" uid="uid://bd8nc18ktfgyg" path="res://scripts/camera_rig.gd" id="4_camrig"]
+[ext_resource type="Script" uid="uid://dj7xn36l1neyv" path="res://scripts/camera_swivel.gd" id="5_camswivel"]
 
 [sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
 
@@ -27,12 +27,12 @@ environment = SubResource("Env_res")
 transform = Transform3D(0.7, -0.5, 0.5, 0, 0.7, 0.7, -0.7, -0.5, 0.5, 0, 80, 0)
 shadow_enabled = true
 
-[node name="CameraRig" type="Node3D" parent="." node_paths=PackedStringArray("target")]
+[node name="CameraRig" type="Node3D" parent="." unique_id=1449307594 node_paths=PackedStringArray("target")]
 script = ExtResource("4_camrig")
 target = NodePath("../GliderBody")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig" node_paths=PackedStringArray("target")]
-transform = Transform3D(1, 0, 0, 0, 0.87, 0.5, 0, -0.5, 0.87, 0, 8, 16)
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=32768552 node_paths=PackedStringArray("target")]
+transform = Transform3D(1, 0, 0, 0, 0.87, 0.5, 0, -0.5, 0.87, 0, 4, 8)
 current = true
 script = ExtResource("5_camswivel")
 target = NodePath("../../GliderBody")
