@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cjhkvk3egmt6j"]
 
 [ext_resource type="Script" uid="uid://daywr6oxhdjft" path="res://scripts/glider_body.gd" id="1_kiolu"]
-[ext_resource type="Shader" uid="uid://clduq105o40jv" path="res://environment/trail_particle.gdshader" id="2_trailsh"]
+[ext_resource type="Shader" path="res://environment/trail_particle.gdshader" id="2_trailsh"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aylop"]
 albedo_color = Color(0.8784314, 0.6784314, 0.6431373, 1)
@@ -17,29 +17,38 @@ albedo_color = Color(0.64, 0.4581333, 0.288, 1)
 material = SubResource("StandardMaterial3D_260ag")
 size = Vector3(1.6, 1.4, 0.1)
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_aylop"]
-height = 0.2
+[sub_resource type="Gradient" id="Gradient_trail"]
+offsets = PackedFloat32Array(0, 0.005, 0.02, 0.1, 0.3, 0.6, 1)
+colors = PackedColorArray(0.9, 0.95, 1, 1, 0.9, 0.95, 1, 0.411, 0.9, 0.95, 1, 0.324, 0.9, 0.95, 1, 0.206, 0.9, 0.95, 1, 0.113, 0.9, 0.95, 1, 0.05, 0.9, 0.95, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_trail"]
+gradient = SubResource("Gradient_trail")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail"]
-gravity = Vector3(0, 0, 0)
-initial_velocity_min = 0.0
-initial_velocity_max = 0.0
 inherit_velocity_ratio = 1.0
+gravity = Vector3(0, 0, 0)
 damping_min = 12.0
 damping_max = 14.0
 scale_min = 0.08
 scale_max = 0.16
+color_ramp = SubResource("GradientTexture1D_trail")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_trail"]
+render_priority = 0
 shader = ExtResource("2_trailsh")
 shader_parameter/trail_color = Color(0.9, 0.95, 1, 1)
-shader_parameter/fade_exp = 0.05
+shader_parameter/fade_exp = 0.1
 shader_parameter/base_alpha = 1.0
 shader_parameter/softness = 0.35
 
 [sub_resource type="QuadMesh" id="QuadMesh_trail"]
 material = SubResource("ShaderMaterial_trail")
-size = Vector2(0.45, 0.45)
+size = Vector2(0.32, 0.32)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_aylop"]
+height = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_qut1m"]
 
 [node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
 script = ExtResource("1_kiolu")
@@ -52,22 +61,51 @@ mesh = SubResource("PrismMesh_qut1m")
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, -0.04, -0.15)
 mesh = SubResource("PrismMesh_1mgfi")
 
-[node name="TrailL" type="GPUParticles3D" parent="Mesh/Wing"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, -0.6, 0)
-amount = 420
+[node name="TrailL" type="GPUParticles3D" parent="Mesh/Wing" unique_id=465931524]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, -0.8, 0)
+amount = 240
 lifetime = 0.8
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_trail")
 draw_pass_1 = SubResource("QuadMesh_trail")
 
-[node name="TrailR" type="GPUParticles3D" parent="Mesh/Wing"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, -0.6, 0)
-amount = 420
+[node name="TrailR" type="GPUParticles3D" parent="Mesh/Wing" unique_id=118740851]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, -0.8, 0)
+amount = 240
 lifetime = 0.8
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_trail")
 draw_pass_1 = SubResource("QuadMesh_trail")
 
 [node name="Shape" type="CollisionShape3D" parent="." unique_id=1877100831]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 shape = SubResource("CylinderShape3D_aylop")
+
+[node name="Ailerons" type="Node3D" parent="." unique_id=1488725268]
+transform = Transform3D(0.06, 0, 0, 0, -2.6226832e-09, 0.06, 0, -0.06, -2.6226832e-09, 0, 0.07793358, 0.54999995)
+
+[node name="Pitch" type="Node3D" parent="Ailerons" unique_id=373461907]
+
+[node name="LMesh" type="MeshInstance3D" parent="Ailerons/Pitch" unique_id=72142204]
+transform = Transform3D(5, 0, 0, 0, 3, 1.4210855e-14, 0, -4.2632564e-14, 1, -5, -1.5, 0)
+mesh = SubResource("BoxMesh_qut1m")
+
+[node name="RMesh" type="MeshInstance3D" parent="Ailerons/Pitch" unique_id=317078512]
+transform = Transform3D(5, 0, 0, 0, 3, 1.4210855e-14, 0, -4.2632564e-14, 1, 5, -1.5, 0)
+mesh = SubResource("BoxMesh_qut1m")
+
+[node name="LRoll" type="Node3D" parent="Ailerons" unique_id=1243852727]
+
+[node name="Mesh" type="MeshInstance3D" parent="Ailerons/LRoll" unique_id=1510528762]
+transform = Transform3D(3, 0, 0, 0, 3, 1.4210855e-14, 0, -4.2632564e-14, 1, -10, -1.5, 0)
+mesh = SubResource("BoxMesh_qut1m")
+
+[node name="RRoll" type="Node3D" parent="Ailerons" unique_id=1618242889]
+
+[node name="Mesh" type="MeshInstance3D" parent="Ailerons/RRoll" unique_id=1607751044]
+transform = Transform3D(3, 0, 0, 0, 3, 1.4210855e-14, 0, -4.2632564e-14, 1, 10, -1.5, 0)
+mesh = SubResource("BoxMesh_qut1m")
+
+[node name="Yaw" type="Node3D" parent="Ailerons" unique_id=988534486]
+
+[node name="Mesh" type="MeshInstance3D" parent="Ailerons/Yaw" unique_id=1688121067]
+transform = Transform3D(0.8, 0, 0, 0, 4, 9.947598e-14, 0, -1.3263464e-13, 3, 0, -2, 0.5)
+mesh = SubResource("BoxMesh_qut1m")
