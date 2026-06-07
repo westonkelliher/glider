@@ -31,7 +31,7 @@ func _physics_process(delta: float) -> void:
 
 	var pitch := Input.get_axis("move_forward", "move_back")
 	rotation.x += pitch * TURN_SPEED * delta
-	rotation.x = clampf(rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
+	#rotation.x = clampf(rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
 	
 	var facing_dir := (transform.basis * Vector3.FORWARD).normalized()
 	var v_dir := velocity.normalized()
