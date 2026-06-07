@@ -29,6 +29,7 @@ var ail_yaw_target := 0.0
 
 ## Pot Height
 var pot_height := 0.0
+var _pot_label: Label
 const PH_MARGIN := 0.1
 #const POT_SPEED_CATCHUP := 20.0 # meters/s^2
 const POT_SPEED_CATCHUP_MULT := 2.0
@@ -39,8 +40,18 @@ const POT_DIR_CATCHUP_MULT := 0.15
 # dH = v1
 
 
+func _ready() -> void:
+	# Top-left HUD readout, built in code so no scene edit is needed.
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	_pot_label = Label.new()
+	_pot_label.position = Vector2(12, 8)
+	_pot_label.add_theme_font_size_override("font_size", 22)
+	layer.add_child(_pot_label)
+
+
 func _physics_process(delta: float) -> void:
-	
+
 	## inputs
 	# adjust ailerons
 	adjust_ailerons(delta)
@@ -78,7 +89,9 @@ func _physics_process(delta: float) -> void:
 	
 	## velocity
 	velocity = new_velocity
-	
+
+	_pot_label.text = "pot height: %.1f m" % pot_height
+
 	
 	#var speed := 0.0
 	#if d_h < PH_MARGIN:
