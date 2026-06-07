@@ -1,0 +1,6 @@
+
+Glider mechanics where we keep track of potential energy via pot_height (potential height) (ph).
+
+max speed at height h below ph will be proportional to f(ph-h).
+
+instead of drag directly reducing speed like a force, drag will reduce pot_height thereby reducing speed indirectly
