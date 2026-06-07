@@ -29,7 +29,11 @@ var ail_yaw_target := 0.0
 
 ## Pot Height
 var pot_height := 0.0
-var PH_MARGIN := 0.1
+const PH_MARGIN := 0.1
+#const POT_SPEED_CATCHUP := 20.0 # meters/s^2
+const POT_SPEED_CATCHUP_MULT := 2.0
+#const POT_DIR_CATCHUP := 2.0 # radians / s
+const POT_DIR_CATCHUP_MULT := 0.15
 ## Pot Height Equation:
 # v1 at h1,ph1 allows us to get to ph1 under g deceleration:
 # dH = v1
@@ -37,34 +41,59 @@ var PH_MARGIN := 0.1
 
 func _physics_process(delta: float) -> void:
 	
-	if position.y > pot_height-0.5:
-		pot_height = position.y+0.5
-	
-	var d_h := pot_height - position.y
-	
-	var speed := 0.0
-	if d_h < PH_MARGIN:
-		speed = 0.1
-	else:
-		speed = sqrt(d_h*G*2) # solved for speed in terms of d_h
-	
+	## inputs
 	# adjust ailerons
 	adjust_ailerons(delta)
-
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	rotate_object_local(Vector3.RIGHT, ail_pitch * PITCH_MULT * delta) # pitch
 	rotate_object_local(Vector3.BACK, ail_roll * ROLL_MULT * delta)    # roll
 	rotate_object_local(Vector3.UP, ail_yaw * YAW_MULT * delta)        # yaw
 	
-	var facing_dir := (transform.basis * Vector3.FORWARD).normalized()
-	var v_dir := velocity.normalized()
-	if v_dir:
-		#var d_dir :=  
-		v_dir = v_dir.move_toward(facing_dir, 1.0 * delta).normalized()
-	else:
-		v_dir = facing_dir
-	velocity = v_dir * speed
+	## speeds, directions and velocities from potential (pot) values
+	# pot values
+	if position.y > pot_height:
+		pot_height = position.y
+	var d_h := pot_height - position.y
+	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h
+	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
+	#var pot_velocity := pot_speed*nose_dir
+	# current values
+	var current_speed := velocity.length()
+	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
+	# new values
+	var speed_offset := absf(pot_speed - current_speed)
+	var pot_speed_catchup := POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
+	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
+	#if new_speed < 0.1:
+			#new_speed += 0.1
+	var dir_offset := nose_dir - current_dir
+	var pot_dir_catchup := POT_DIR_CATCHUP_MULT * current_speed * dir_offset.length()
+	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir 
+	var new_velocity := new_speed * new_dir
+	
+	## grav for no stuck (100% gravity when speed is 0)
+	var dv_gravity := G*Vector3.DOWN * (1/(1+current_speed)) * delta
+	new_velocity += dv_gravity
+	
+	## velocity
+	velocity = new_velocity
+	
+	
+	#var speed := 0.0
+	#if d_h < PH_MARGIN:
+		#speed = 0.1
+	#else:
+		#speed = sqrt(d_h*G*2) # solved for speed in terms of d_h
+	#
+	#
+	#var facing_dir := (transform.basis * Vector3.FORWARD).normalized()
+	#var v_dir := velocity.normalized()
+	#if v_dir:
+		##var d_dir :=  
+		#v_dir = v_dir.move_toward(facing_dir, 1.0 * delta).normalized()
+	#else:
+		#v_dir = facing_dir
 	move_and_slide()
 
 
