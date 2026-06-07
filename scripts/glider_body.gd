@@ -25,13 +25,17 @@ func _physics_process(delta: float) -> void:
 	else:
 		speed = sqrt(d_h*G*2) # solved for speed in terms of d_h
 	
-	# Left/right rotate (yaw) the character; forward/back drive along facing.
-	var roll := Input.get_axis("move_right", "move_left")
-	rotation.z += roll * TURN_SPEED * delta
+	# L/R yaws by default, but rolls while air_roll is held (RL-style).
+	# Pitch is always about the craft's own right axis. All local-axis based,
+	# so control is relative to the glider's orientation, not the world axes.
+	var lr := Input.get_axis("move_right", "move_left")
+	if Input.is_action_pressed("air_roll"):
+		rotate_object_local(Vector3.BACK, lr * TURN_SPEED * delta)
+	else:
+		rotate_object_local(Vector3.UP, lr * TURN_SPEED * delta)
 
 	var pitch := Input.get_axis("move_forward", "move_back")
-	rotation.x += pitch * TURN_SPEED * delta
-	#rotation.x = clampf(rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
+	rotate_object_local(Vector3.RIGHT, pitch * TURN_SPEED * delta)
 	
 	var facing_dir := (transform.basis * Vector3.FORWARD).normalized()
 	var v_dir := velocity.normalized()
