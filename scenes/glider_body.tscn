@@ -51,12 +51,11 @@ height = 0.2
 [sub_resource type="BoxMesh" id="BoxMesh_qut1m"]
 
 [node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
 floor_max_angle = 0.43284166
 script = ExtResource("1_kiolu")
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=8097921]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -0.1)
 mesh = SubResource("PrismMesh_qut1m")
 
 [node name="Wing" type="MeshInstance3D" parent="Mesh" unique_id=2131678133]
@@ -65,7 +64,6 @@ mesh = SubResource("PrismMesh_1mgfi")
 
 [node name="TrailL" type="GPUParticles3D" parent="Mesh/Wing" unique_id=465931524]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, -0.8, 0)
-visible = false
 amount = 240
 lifetime = 0.8
 process_material = SubResource("ParticleProcessMaterial_trail")
@@ -73,7 +71,6 @@ draw_pass_1 = SubResource("QuadMesh_trail")
 
 [node name="TrailR" type="GPUParticles3D" parent="Mesh/Wing" unique_id=118740851]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, -0.8, 0)
-visible = false
 amount = 240
 lifetime = 0.8
 process_material = SubResource("ParticleProcessMaterial_trail")
@@ -84,7 +81,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 shape = SubResource("CylinderShape3D_aylop")
 
 [node name="Ailerons" type="Node3D" parent="." unique_id=1488725268]
-transform = Transform3D(0.06, 0, 0, 0, -2.6226832e-09, 0.06, 0, -0.06, -2.6226832e-09, 0, 0.07793358, 0.54999995)
+transform = Transform3D(0.06, 0, 0, 0, -2.6226832e-09, 0.06, 0, -0.06, -2.6226832e-09, 0, 0.07793358, 0.43670166)
 
 [node name="Pitch" type="Node3D" parent="Ailerons" unique_id=373461907]
 
