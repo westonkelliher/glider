@@ -58,10 +58,13 @@ func menu_labels() -> Dictionary:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# T toggles TEST <-> PLAY tuning live.
-	if event is InputEventKey and event.pressed and not event.echo \
-			and event.keycode == KEY_T:
+	# T / Back toggles TEST <-> PLAY tuning live.
+	if event.is_action_pressed("toggle_tuning"):
 		toggle_tuning()
+		_menu.refresh_labels()
+	# C / Start toggles RL <-> PILOT control scheme live.
+	elif event.is_action_pressed("toggle_scheme"):
+		toggle_control()
 		_menu.refresh_labels()
 
 
@@ -107,7 +110,7 @@ func _physics_process(delta: float) -> void:
 	## velocity
 	velocity = new_velocity
 
-	_hud.set_readout(pot_height, tuning.display_name)
+	_hud.set_readout(pot_height, tuning.display_name, GliderInput.name_of(control_scheme))
 	move_and_slide()
 
 
@@ -126,3 +129,12 @@ func adjust_ailerons(delta: float) -> void:
 	$Ailerons/LRoll.rotation.x = ail_roll * SURFACE_DEFLECT    # ailerons deflect
 	$Ailerons/RRoll.rotation.x = ail_roll * -SURFACE_DEFLECT   # oppositely
 	$Ailerons/Yaw.rotation.z = ail_yaw * SURFACE_DEFLECT       # rudder
+
+
+## Smoothstep-interpolate: val1 below thresh1, val2 above thresh2, smooth between.
+## Order-agnostic — pass thresholds in either order.
+static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, variable: float) -> float:
+	if thresh1 > thresh2:
+		var t := thresh1; thresh1 = thresh2; thresh2 = t
+		var v := val1; val1 = val2; val2 = v
+	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))

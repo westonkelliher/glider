@@ -8,11 +8,12 @@ extends Resource
 
 ## Ailerons — how fast a surface eases toward target (1/s) and craft turn
 ## authority per unit of deflection.
-@export var ail_pitch_speed := 7.0
-@export var ail_roll_speed := 5.0
-@export var ail_yaw_speed := 7.0
-@export var pitch_mult := 3.5
-@export var roll_mult := 5.0
+@export var ail_pitch_speed := 2.0
+@export var ail_roll_speed := 2.0
+@export var ail_yaw_speed := 1.5
+#
+@export var pitch_mult := 2.5
+@export var roll_mult := 3.0
 @export var yaw_mult := 2.0
 
 ## Pot-height energy model.
