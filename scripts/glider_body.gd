@@ -143,6 +143,16 @@ func _on_control_pressed() -> void:
 	_refresh_menu_labels()
 
 
+const BINDS_TEXT := "[controls]\n" \
+	+ "pitch/roll: W A S D\n" \
+	+ "yaw (pilot): Q E / LB RB\n" \
+	+ "air roll (RL): Shift / LB\n" \
+	+ "camera: right stick\n" \
+	+ "tuning TEST/PLAY: T / Back\n" \
+	+ "scheme RL/PILOT: C / Start\n" \
+	+ "pause: Esc"
+
+
 func _open_menu() -> void:
 	menu_open = true
 	_menu_root.visible = true
@@ -164,16 +174,17 @@ func _apply_tuning() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		# Esc toggles the pause menu.
-		if event.keycode == KEY_ESCAPE:
-			if menu_open: _close_menu()
-			else: _open_menu()
-		# T toggles TEST <-> PLAY tuning live.
-		elif event.keycode == KEY_T:
-			mode = Mode.PLAY if mode == Mode.TEST else Mode.TEST
-			_apply_tuning()
-			_refresh_menu_labels()
+	# Esc toggles the pause menu (keyboard only).
+	if event is InputEventKey and event.pressed and not event.echo \
+			and event.keycode == KEY_ESCAPE:
+		if menu_open: _close_menu()
+		else: _open_menu()
+	# T / Back toggles TEST <-> PLAY tuning live.
+	elif event.is_action_pressed("toggle_tuning"):
+		_on_tuning_pressed()
+	# C / Start toggles RL <-> PILOT control scheme live.
+	elif event.is_action_pressed("toggle_scheme"):
+		_on_control_pressed()
 
 
 func _physics_process(delta: float) -> void:
@@ -226,7 +237,9 @@ func _physics_process(delta: float) -> void:
 	## velocity
 	velocity = new_velocity
 
-	_pot_label.text = "pot height: %.1f m\nmode: %s  [T]" % [pot_height, Mode.keys()[mode]]
+	var scheme_name := "ROCKET LEAGUE" if control_scheme == Scheme.RL else "PILOT"
+	_pot_label.text = "pot height: %.1f m\ntuning: %s\nscheme: %s\n\n%s" \
+		% [pot_height, Mode.keys()[mode], scheme_name, BINDS_TEXT]
 
 	
 	#var speed := 0.0

@@ -9,3 +9,4 @@ godot project for gliding physics
 
 ### Notes for Claude
 * this project uses godot 4.6.stable. Make sure to use proper, up to date godot syntax and conventions. Look up proper syntax or convention or idiom if necessary.
+* when exploring this repo, check the commit messages of the last 20 commits
