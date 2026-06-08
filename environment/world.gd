@@ -44,7 +44,7 @@ func _mat(color: Color) -> StandardMaterial3D:
 
 func _make_tree(rng: RandomNumberGenerator) -> Node3D:
 	var root := Node3D.new()
-	var scale := rng.randf_range(0.8, 1.6)
+	var scale := rng.randf_range(0.8, 3.2)
 
 	var trunk_h := 2.0 * scale
 	var trunk := MeshInstance3D.new()
