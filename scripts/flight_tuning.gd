@@ -9,16 +9,19 @@ extends Resource
 ## Ailerons — how fast a surface eases toward target (1/s) and craft turn
 ## authority per unit of deflection.
 # aileron speed
-@export var AIL_PITCH_SPEED := 3.0
-@export var AIL_ROLL_SPEED := 3.0
+@export var AIL_PITCH_SPEED := 3.1
+@export var AIL_ROLL_SPEED := 3.5
 @export var AIL_YAW_SPEED := 2.0
+# aileron acc
+@export var AIL_ACC := 0.5 # dont go to 0 even though we interp
+@export var AIL_DAMP_ZONES_SIZE := 0.4 # as a fraction of total aileron range (for each zone)
 # max rotation speeds
 @export var PITCH_MULT := 4.5
 @export var ROLL_MULT := 4.5
 @export var YAW_MULT := 3.5
 
 ## Pot-height energy model.
-@export var POT_SPEED_CATCHUP_MULT := 4.0
+@export var POT_SPEED_CATCHUP_MULT := 0.5
 @export var POT_DIR_CATCHUP_MULT := 0.2
 @export var DRAG := 0.5 
 
@@ -37,11 +40,12 @@ static func play() -> FlightTuning:
 	t.AIL_PITCH_SPEED = 12.0
 	t.AIL_ROLL_SPEED = 10.0
 	t.AIL_YAW_SPEED = 12.0
+	t.AIL_DAMP_ZONES_SIZE = 0.3
 	# max rotation speeds
 	t.PITCH_MULT = 6.0
 	t.ROLL_MULT = 7.0
 	t.YAW_MULT = 4.5
-	t.POT_SPEED_CATCHUP_MULT = 4.0
+	t.POT_SPEED_CATCHUP_MULT = 1.0
 	t.POT_DIR_CATCHUP_MULT = 0.25
 	t.DRAG = 0.2
 	return t

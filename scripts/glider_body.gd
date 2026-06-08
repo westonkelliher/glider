@@ -16,9 +16,12 @@ var tuning: FlightTuning
 ## Aileron surface state (smoothed deflections + their input targets).
 var ail_pitch := 0.0
 var ail_pitch_target := 0.0
+var ail_pitch_speed := 0.0
 var ail_roll := 0.0
+var ail_roll_speed := 0.0
 var ail_roll_target := 0.0
 var ail_yaw := 0.0
+var ail_yaw_speed := 0.0
 var ail_yaw_target := 0.0
 
 
@@ -84,9 +87,7 @@ func _physics_process(delta: float) -> void:
 	if position.y > pot_height && position.y > 2.0:
 		pot_height = position.y
 	var d_h := pot_height - position.y
-	print(d_h)
 	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h
-	print(pot_speed)
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
 	# current values
 	var current_speed := velocity.length()
@@ -109,17 +110,78 @@ func _physics_process(delta: float) -> void:
 	var nose_axis := nose_dir.cross(current_dir).normalized()
 	rotate(nose_axis, nose_pull_r)
 	
+	
+	## Accelerations
+	var a_gravity := G * Vector3.DOWN * delta
+	var a_drag := 10*drag_factor * -velocity.normalized()
+	# Sum
+	var a_total := a_gravity
 
 	## velocity
-	velocity = new_velocity
-	if velocity.length() < 0.1:
-		velocity += Vector3.DOWN * 0.05
+	velocity = new_velocity + a_total
+	#if velocity.length() < 0.1:
+		#velocity += Vector3.DOWN * 0.05
 
 	set_stats(d_h, current_speed, pot_speed, new_speed, nose_dir, current_dir,
 		pot_speed_catchup, pot_dir_catchup)
+		
+	#velocity = Vector3.ZERO# TODONOW uncomment
+	#rotation = Vector3.ZERO# TODONOW uncomment
 	move_and_slide()
 
 
+var p_is_start := true
+
+func adjust_ailerons(delta: float) -> void:
+	var targets := GliderInput.read_targets(control_scheme)
+	var p_target := targets.x
+	var r_target := targets.y
+	var y_target := targets.z
+	
+	# rename
+	var damp_size := tuning.AIL_DAMP_ZONES_SIZE
+	var p_s := tuning.AIL_PITCH_SPEED
+	var acc := tuning.AIL_ACC
+	var r_s := tuning.AIL_ROLL_SPEED
+	var y_s := tuning.AIL_YAW_SPEED
+	
+	var p_dir := 1.0
+	if p_target < ail_pitch:
+		p_dir = -1.0
+	if ail_pitch_speed * p_dir < 0: # if moving in opposite direction we want, acc * 2
+		ail_pitch_speed = move_toward(ail_pitch_speed, p_s, acc)
+	ail_pitch_speed = move_toward(ail_pitch_speed, p_s, acc)
+	
+	# if we're close to the target, damp speed
+	var p_dist_to_target := absf(p_target - ail_pitch)
+	if p_dist_to_target < damp_size:
+		print('ye')
+		ail_pitch_speed = 0.03 + p_s * pow((p_dist_to_target+0.1)/(damp_size+0.1), 1.5)
+		print(p_target)
+		print(ail_pitch_speed)
+
+	ail_pitch = move_toward(ail_pitch, p_target, ail_pitch_speed * delta)
+	print("ail pitch ", ail_pitch, " -> ", p_target, " at ", ail_pitch_speed)
+	ail_roll = move_toward(ail_roll, r_target, ail_roll_speed * delta)
+	ail_yaw = move_toward(ail_yaw, y_target, ail_yaw_speed * delta)
+
+	# Deflect each visual surface about its correct local hinge axis.
+	$Ailerons/Pitch.rotation.x = ail_pitch * -SURFACE_DEFLECT  # elevator (both together)
+	$Ailerons/LRoll.rotation.x = ail_roll * SURFACE_DEFLECT    # ailerons deflect
+	$Ailerons/RRoll.rotation.x = ail_roll * -SURFACE_DEFLECT   # oppositely
+	$Ailerons/Yaw.rotation.z = ail_yaw * SURFACE_DEFLECT       # rudder
+
+
+## Smoothstep-interpolate: val1 below thresh1, val2 above thresh2, smooth between.
+## Order-agnostic — pass thresholds in either order.
+static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, variable: float) -> float:
+	if thresh1 > thresh2:
+		var t := thresh1; thresh1 = thresh2; thresh2 = t
+		var v := val1; val1 = val2; val2 = v
+	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))
+	
+	
+	
 func set_stats(
 	d_h: float,
 	current_speed: float,
@@ -145,28 +207,3 @@ func set_stats(
 		"drag": tuning.DRAG * current_speed * (1.0 - align),
 	})
 	
-
-func adjust_ailerons(delta: float) -> void:
-	var targets := GliderInput.read_targets(control_scheme)
-	ail_pitch_target = targets.x
-	ail_roll_target = targets.y
-	ail_yaw_target = targets.z
-
-	ail_pitch = move_toward(ail_pitch, ail_pitch_target, tuning.AIL_PITCH_SPEED * delta)
-	ail_roll = move_toward(ail_roll, ail_roll_target, tuning.AIL_ROLL_SPEED * delta)
-	ail_yaw = move_toward(ail_yaw, ail_yaw_target, tuning.AIL_YAW_SPEED * delta)
-
-	# Deflect each visual surface about its correct local hinge axis.
-	$Ailerons/Pitch.rotation.x = ail_pitch * -SURFACE_DEFLECT  # elevator (both together)
-	$Ailerons/LRoll.rotation.x = ail_roll * SURFACE_DEFLECT    # ailerons deflect
-	$Ailerons/RRoll.rotation.x = ail_roll * -SURFACE_DEFLECT   # oppositely
-	$Ailerons/Yaw.rotation.z = ail_yaw * SURFACE_DEFLECT       # rudder
-
-
-## Smoothstep-interpolate: val1 below thresh1, val2 above thresh2, smooth between.
-## Order-agnostic — pass thresholds in either order.
-static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, variable: float) -> float:
-	if thresh1 > thresh2:
-		var t := thresh1; thresh1 = thresh2; thresh2 = t
-		var v := val1; val1 = val2; val2 = v
-	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))
