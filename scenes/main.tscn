@@ -32,8 +32,8 @@ script = ExtResource("1_world")
 [node name="Floor" parent="." unique_id=1291254760 instance=ExtResource("3_sugp2")]
 
 [node name="GliderBody" parent="." unique_id=786574907 instance=ExtResource("2_0wfyh")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 2.9999924, 39.92811, 62.75814)
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 2.9999924, 52.94013, 70.93966)
 
 [node name="CameraRig" parent="." unique_id=478481249 node_paths=PackedStringArray("target") instance=ExtResource("3_jyhfs")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9999924, 48.242912, 81.34761)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9999924, 82.19779, 90.10272)
 target = NodePath("../GliderBody")
