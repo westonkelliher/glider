@@ -82,11 +82,15 @@ func _physics_process(delta: float) -> void:
 	if position.y > pot_height && position.y > 2.0:
 		pot_height = position.y
 	var d_h := pot_height - position.y
+	print(d_h)
 	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h
+	print(pot_speed)
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
 	# current values
 	var current_speed := velocity.length()
 	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
+	if !current_dir:
+		current_dir = Vecto3.DOWN
 	# new values
 	var pot_speed_catchup := 1.0+tuning.pot_speed_catchup_mult*(0.1+current_speed)
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
@@ -96,16 +100,16 @@ func _physics_process(delta: float) -> void:
 	var new_velocity := new_speed * new_dir
 
 	## forces
-	# grav for no stuck (100% gravity when speed is 0)
-	var dv_gravity := G*Vector3.DOWN * delta
-	new_velocity += dv_gravity
-	# drag: bleed pot energy when moving crosswise to the nose (1 - alignment)
-	var alignment_drag_factor := (1.0 - nose_dir.dot(current_dir))
-	pot_height -= tuning.drag * current_speed * alignment_drag_factor * delta
-	if pot_height < 0:
-		pot_height = 0
-	if position.y < 2.0:
-		pot_height += 5 * delta # recover pot for testing
+	# no stuck:
+	if d_h < 1.0:
+		position += Vector3.DOWN * (1-d_h) * delta
+	## drag: bleed pot energy when moving crosswise to the nose (1 - alignment)
+	#var alignment_drag_factor := (1.0 - nose_dir.dot(current_dir))
+	#pot_height -= tuning.drag * current_speed * alignment_drag_factor * delta
+	#if pot_height < 0:
+		#pot_height = 0
+	#if position.y < 2.0:
+		#pot_height += 5 * delta # recover pot for testing
 
 	## velocity
 	velocity = new_velocity
