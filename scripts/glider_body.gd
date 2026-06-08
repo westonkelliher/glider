@@ -187,7 +187,7 @@ func _physics_process(delta: float) -> void:
 	# local axes, so control stays relative to the glider's orientation.
 	rotate_object_local(Vector3.RIGHT, ail_pitch * PITCH_MULT * delta) # pitch
 	rotate_object_local(Vector3.BACK, ail_roll * ROLL_MULT * delta)    # roll
-	rotate_object_local(Vector3.UP, ail_yaw * YAW_MULT * delta)        # yaw
+	rotate_object_local(Vector3.DOWN, ail_yaw * YAW_MULT * delta)      # yaw (right = nose right)
 	
 	## speeds, directions and velocities from potential (pot) values
 	# pot values
