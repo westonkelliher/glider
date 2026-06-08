@@ -24,6 +24,11 @@ var ail_yaw := 0.0
 var ail_yaw_speed := 0.0
 var ail_yaw_target := 0.0
 
+## rotational speeds
+var pitch_v := 0.0
+var roll_v := 0.0
+var yaw_v := 0.0
+
 
 ## Pot height (stored potential energy as an equivalent altitude).
 var pot_height := 0.0
@@ -86,12 +91,12 @@ func _physics_process(delta: float) -> void:
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
 	var drag_factor := tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
-	#var pitch_rate := tuning.PITCH_MULT * ail_pitch * (velocity.length()+0.1) *
+	var rrate := 0.3 + 0.2 * sqrt(velocity.length()) #* nose_dot
 	#
 	## adjust rotation
-	rotate_object_local(Vector3.RIGHT, ail_pitch * tuning.PITCH_MULT * delta) # pitch
-	rotate_object_local(Vector3.BACK, ail_roll * tuning.ROLL_MULT * delta)    # roll
-	rotate_object_local(Vector3.DOWN, ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
+	rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
+	rotate_object_local(Vector3.BACK, rrate * ail_roll * tuning.ROLL_MULT * delta)    # roll
+	rotate_object_local(Vector3.DOWN, rrate * ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
 	#
 	## speeds, directions and velocities from potential (pot) values
 	# pot values
