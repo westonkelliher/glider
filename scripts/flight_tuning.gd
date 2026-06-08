@@ -4,23 +4,26 @@ extends Resource
 ## to see), PLAY = snappy. Exported so presets can be authored as .tres in the
 ## inspector; the static factories below are the in-code defaults.
 
-@export var display_name := "TEST"
+@export var DISPLAY_NAME := "TEST"
 
 ## Ailerons — how fast a surface eases toward target (1/s) and craft turn
 ## authority per unit of deflection.
 # aileron speed
-@export var ail_pitch_speed := 3.0
-@export var ail_roll_speed := 3.0
-@export var ail_yaw_speed := 2.0
+@export var AIL_PITCH_SPEED := 3.0
+@export var AIL_ROLL_SPEED := 3.0
+@export var AIL_YAW_SPEED := 2.0
 # max rotation speeds
-@export var pitch_mult := 4.5
-@export var roll_mult := 4.5
-@export var yaw_mult := 3.5
+@export var PITCH_MULT := 4.5
+@export var ROLL_MULT := 4.5
+@export var YAW_MULT := 3.5
 
 ## Pot-height energy model.
-@export var pot_speed_catchup_mult := 4.0
-@export var pot_dir_catchup_mult := 0.2
-@export var drag := 0.5 
+@export var POT_SPEED_CATCHUP_MULT := 4.0
+@export var POT_DIR_CATCHUP_MULT := 0.2
+@export var DRAG := 0.5 
+
+#
+@export var NOSE_PULL_MULT := 0.2
 
 
 static func test() -> FlightTuning:
@@ -29,16 +32,16 @@ static func test() -> FlightTuning:
 
 static func play() -> FlightTuning:
 	var t := FlightTuning.new()
-	t.display_name = "PLAY"
+	t.DISPLAY_NAME = "PLAY"
 	# aileron speeds
-	t.ail_pitch_speed = 12.0
-	t.ail_roll_speed = 10.0
-	t.ail_yaw_speed = 12.0
+	t.AIL_PITCH_SPEED = 12.0
+	t.AIL_ROLL_SPEED = 10.0
+	t.AIL_YAW_SPEED = 12.0
 	# max rotation speeds
-	t.pitch_mult = 6.0
-	t.roll_mult = 7.0
-	t. yaw_mult = 4.5
-	t.pot_speed_catchup_mult = 4.0
-	t.pot_dir_catchup_mult = 0.25
-	t.drag = 0.2
+	t.PITCH_MULT = 6.0
+	t.ROLL_MULT = 7.0
+	t.YAW_MULT = 4.5
+	t.POT_SPEED_CATCHUP_MULT = 4.0
+	t.POT_DIR_CATCHUP_MULT = 0.25
+	t.DRAG = 0.2
 	return t
