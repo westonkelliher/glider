@@ -51,6 +51,7 @@ height = 0.2
 [sub_resource type="BoxMesh" id="BoxMesh_qut1m"]
 
 [node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
 floor_max_angle = 0.43284166
 script = ExtResource("1_kiolu")
 

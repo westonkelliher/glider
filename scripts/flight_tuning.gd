@@ -17,9 +17,9 @@ extends Resource
 @export var yaw_mult := 2.0
 
 ## Pot-height energy model.
-@export var pot_speed_catchup_mult := 2.0
-@export var pot_dir_catchup_mult := 0.15
-@export var drag := 1.0 # pot-height bled per (speed * misalignment) per second
+@export var pot_speed_catchup_mult := 4.0
+@export var pot_dir_catchup_mult := 0.2
+@export var drag := 0.5 
 
 
 static func test() -> FlightTuning:
@@ -32,7 +32,7 @@ static func play() -> FlightTuning:
 	t.ail_pitch_speed = 12.0
 	t.ail_roll_speed = 10.0
 	t.ail_yaw_speed = 12.0
-	t.pot_speed_catchup_mult = 3.0
-	t.pot_dir_catchup_mult = 0.2
+	t.pot_speed_catchup_mult = 4.0
+	t.pot_dir_catchup_mult = 0.25
 	t.drag = 0.2
 	return t
