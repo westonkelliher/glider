@@ -86,11 +86,11 @@ transform = Transform3D(0.06, 0, 0, 0, -2.6226832e-09, 0.06, 0, -0.06, -2.622683
 [node name="Pitch" type="Node3D" parent="Ailerons" unique_id=373461907]
 
 [node name="LMesh" type="MeshInstance3D" parent="Ailerons/Pitch" unique_id=72142204]
-transform = Transform3D(5, 0, 0, 0, 2, 2.1316282e-14, 0, -4.2632564e-14, 1, -5, -18.387257, -7.1525574e-07)
+transform = Transform3D(5, 0, 0, 0, 2, 1.4210855e-14, 0, -2.842171e-14, 1, -5, -1, 0)
 mesh = SubResource("BoxMesh_qut1m")
 
 [node name="RMesh" type="MeshInstance3D" parent="Ailerons/Pitch" unique_id=317078512]
-transform = Transform3D(5, 0, 0, 0, 2, 2.1316282e-14, 0, -4.2632564e-14, 1, 5, -18.387257, -7.1525574e-07)
+transform = Transform3D(5, 0, 0, 0, 2, 1.4210855e-14, 0, -2.842171e-14, 1, 5, -1, 0)
 mesh = SubResource("BoxMesh_qut1m")
 
 [node name="LRoll" type="Node3D" parent="Ailerons" unique_id=1243852727]
