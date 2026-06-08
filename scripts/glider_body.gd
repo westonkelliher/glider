@@ -77,6 +77,8 @@ func _physics_process(delta: float) -> void:
 	rotate_object_local(Vector3.BACK, ail_roll * tuning.roll_mult * delta)    # roll
 	rotate_object_local(Vector3.DOWN, ail_yaw * tuning.yaw_mult * delta)      # yaw (right = nose right)
 
+
+	
 	## speeds, directions and velocities from potential (pot) values
 	# pot values
 	if position.y > pot_height && position.y > 2.0:
@@ -90,7 +92,7 @@ func _physics_process(delta: float) -> void:
 	var current_speed := velocity.length()
 	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
 	if !current_dir:
-		current_dir = Vecto3.DOWN
+		current_dir = Vector3.DOWN
 	# new values
 	var pot_speed_catchup := 1.0+tuning.pot_speed_catchup_mult*(0.1+current_speed)
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
@@ -101,8 +103,8 @@ func _physics_process(delta: float) -> void:
 
 	## forces
 	# no stuck:
-	if d_h < 1.0:
-		position += Vector3.DOWN * (1-d_h) * delta
+	if velocity.length() < 0.02: 
+		velocity += Vector3.DOWN*0.01
 	## drag: bleed pot energy when moving crosswise to the nose (1 - alignment)
 	#var alignment_drag_factor := (1.0 - nose_dir.dot(current_dir))
 	#pot_height -= tuning.drag * current_speed * alignment_drag_factor * delta
@@ -115,6 +117,20 @@ func _physics_process(delta: float) -> void:
 	velocity = new_velocity
 
 	_hud.set_readout(pot_height, tuning.display_name, GliderInput.name_of(control_scheme))
+	# Top-right debug readout: the 10 most telling flight-model values.
+	var align := nose_dir.dot(current_dir)
+	_hud.set_stats({
+		"alt": position.y,
+		"d_h": d_h,
+		"pot_h": pot_height,
+		"speed": current_speed,
+		"pot_spd": pot_speed,
+		"new_spd": new_speed,
+		"align": align,
+		"spd_catch": pot_speed_catchup,
+		"dir_catch": pot_dir_catchup,
+		"drag": tuning.drag * current_speed * (1.0 - align),
+	})
 	move_and_slide()
 
 
