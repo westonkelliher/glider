@@ -76,26 +76,30 @@ func _physics_process(delta: float) -> void:
 	adjust_ailerons(delta)
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
+	#
+	## current values
+	var current_speed := velocity.length()
+	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
+	if !current_dir.length():
+		current_dir = Vector3.DOWN
+	#
+	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
+	var drag_factor := tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
+	var nose_dot := velocity.normalized().dot(nose_dir)
+	#var pitch_rate := tuning.PITCH_MULT * ail_pitch * (velocity.length()+0.1) *
+	#
+	## adjust rotation
 	rotate_object_local(Vector3.RIGHT, ail_pitch * tuning.PITCH_MULT * delta) # pitch
 	rotate_object_local(Vector3.BACK, ail_roll * tuning.ROLL_MULT * delta)    # roll
 	rotate_object_local(Vector3.DOWN, ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
-
-
-	
+	#
 	## speeds, directions and velocities from potential (pot) values
 	# pot values
 	if position.y > pot_height && position.y > 2.0:
 		pot_height = position.y
 	var d_h := pot_height - position.y
 	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h
-	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
-	# current values
-	var current_speed := velocity.length()
-	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
-	if !current_dir.length():
-		current_dir = Vector3.DOWN
 	#
-	var drag_factor := tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	# new values
 	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
@@ -103,28 +107,27 @@ func _physics_process(delta: float) -> void:
 	var pot_dir_catchup := tuning.POT_DIR_CATCHUP_MULT * current_speed * dir_offset.length()
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
 	var new_velocity := new_speed * new_dir
-
+	#
 	## Nose Pull
 	var nose_pull_r := tuning.NOSE_PULL_MULT * drag_factor * delta
 	nose_pull_r = min(nose_pull_r, nose_dir.angle_to(current_dir)) # dont overshoot
 	var nose_axis := nose_dir.cross(current_dir).normalized()
 	rotate(nose_axis, nose_pull_r)
-	
-	
+	#
 	## Accelerations
 	var a_gravity := G * Vector3.DOWN * delta
 	var a_drag := 10*drag_factor * -velocity.normalized()
 	# Sum
 	var a_total := a_gravity
-
+	#
 	## velocity
 	velocity = new_velocity + a_total
 	#if velocity.length() < 0.1:
 		#velocity += Vector3.DOWN * 0.05
-
+	#
 	set_stats(d_h, current_speed, pot_speed, new_speed, nose_dir, current_dir,
 		pot_speed_catchup, pot_dir_catchup)
-		
+	#
 	#velocity = Vector3.ZERO# TODONOW uncomment
 	#rotation = Vector3.ZERO# TODONOW uncomment
 	move_and_slide()
@@ -137,21 +140,20 @@ func adjust_ailerons(delta: float) -> void:
 	var p_target := targets.x
 	var r_target := targets.y
 	var y_target := targets.z
-	
 	# rename
 	var damp_size := tuning.AIL_DAMP_ZONES_SIZE
 	var p_s := tuning.AIL_PITCH_SPEED
 	var acc := tuning.AIL_ACC
 	var r_s := tuning.AIL_ROLL_SPEED
 	var y_s := tuning.AIL_YAW_SPEED
-	
+	#
+	# pitch
 	var p_dir := 1.0
 	if p_target < ail_pitch:
 		p_dir = -1.0
 	if ail_pitch_speed * p_dir < 0: # if moving in opposite direction we want, acc * 2
 		ail_pitch_speed = move_toward(ail_pitch_speed, p_s, acc)
 	ail_pitch_speed = move_toward(ail_pitch_speed, p_s, acc)
-	
 	# if we're close to the target, damp speed
 	var p_dist_to_target := absf(p_target - ail_pitch)
 	if p_dist_to_target < damp_size:
@@ -159,12 +161,30 @@ func adjust_ailerons(delta: float) -> void:
 		ail_pitch_speed = 0.03 + p_s * pow((p_dist_to_target+0.1)/(damp_size+0.1), 1.5)
 		print(p_target)
 		print(ail_pitch_speed)
-
 	ail_pitch = move_toward(ail_pitch, p_target, ail_pitch_speed * delta)
-	print("ail pitch ", ail_pitch, " -> ", p_target, " at ", ail_pitch_speed)
+	# roll
+	var r_dir := 1.0
+	if r_target < ail_roll:
+		r_dir = -1.0
+	if ail_roll_speed * r_dir < 0: # moving the wrong way — burn extra accel to reverse
+		ail_roll_speed = move_toward(ail_roll_speed, r_s, acc)
+	ail_roll_speed = move_toward(ail_roll_speed, r_s, acc)
+	var r_dist_to_target := absf(r_target - ail_roll)
+	if r_dist_to_target < damp_size:
+		ail_roll_speed = 0.03 + r_s * pow((r_dist_to_target+0.1)/(damp_size+0.1), 1.5)
 	ail_roll = move_toward(ail_roll, r_target, ail_roll_speed * delta)
+	# yaw
+	var y_dir := 1.0
+	if y_target < ail_yaw:
+		y_dir = -1.0
+	if ail_yaw_speed * y_dir < 0:
+		ail_yaw_speed = move_toward(ail_yaw_speed, y_s, acc)
+	ail_yaw_speed = move_toward(ail_yaw_speed, y_s, acc)
+	var y_dist_to_target := absf(y_target - ail_yaw)
+	if y_dist_to_target < damp_size:
+		ail_yaw_speed = 0.03 + y_s * pow((y_dist_to_target+0.1)/(damp_size+0.1), 1.5)
 	ail_yaw = move_toward(ail_yaw, y_target, ail_yaw_speed * delta)
-
+	#
 	# Deflect each visual surface about its correct local hinge axis.
 	$Ailerons/Pitch.rotation.x = ail_pitch * -SURFACE_DEFLECT  # elevator (both together)
 	$Ailerons/LRoll.rotation.x = ail_roll * SURFACE_DEFLECT    # ailerons deflect
