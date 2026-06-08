@@ -54,7 +54,7 @@ func toggle_control() -> void:
 
 
 func menu_labels() -> Dictionary:
-	return {"tuning": tuning.display_name, "control": GliderInput.name_of(control_scheme)}
+	return {"tuning": tuning.DISPLAY_NAME, "control": GliderInput.name_of(control_scheme)}
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -73,9 +73,9 @@ func _physics_process(delta: float) -> void:
 	adjust_ailerons(delta)
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
-	rotate_object_local(Vector3.RIGHT, ail_pitch * tuning.pitch_mult * delta) # pitch
-	rotate_object_local(Vector3.BACK, ail_roll * tuning.roll_mult * delta)    # roll
-	rotate_object_local(Vector3.DOWN, ail_yaw * tuning.yaw_mult * delta)      # yaw (right = nose right)
+	rotate_object_local(Vector3.RIGHT, ail_pitch * tuning.PITCH_MULT * delta) # pitch
+	rotate_object_local(Vector3.BACK, ail_roll * tuning.ROLL_MULT * delta)    # roll
+	rotate_object_local(Vector3.DOWN, ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
 
 
 	
@@ -91,33 +91,46 @@ func _physics_process(delta: float) -> void:
 	# current values
 	var current_speed := velocity.length()
 	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
-	if !current_dir:
+	if !current_dir.length():
 		current_dir = Vector3.DOWN
+	#
+	var drag_factor := tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	# new values
-	var pot_speed_catchup := 1.0+tuning.pot_speed_catchup_mult*(0.1+current_speed)
+	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
 	var dir_offset := nose_dir - current_dir
-	var pot_dir_catchup := tuning.pot_dir_catchup_mult * current_speed * dir_offset.length()
+	var pot_dir_catchup := tuning.POT_DIR_CATCHUP_MULT * current_speed * dir_offset.length()
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
 	var new_velocity := new_speed * new_dir
 
-	## forces
-	# no stuck:
-	if velocity.length() < 0.02: 
-		velocity += Vector3.DOWN*0.01
-	## drag: bleed pot energy when moving crosswise to the nose (1 - alignment)
-	#var alignment_drag_factor := (1.0 - nose_dir.dot(current_dir))
-	#pot_height -= tuning.drag * current_speed * alignment_drag_factor * delta
-	#if pot_height < 0:
-		#pot_height = 0
-	#if position.y < 2.0:
-		#pot_height += 5 * delta # recover pot for testing
+	## Nose Pull
+	var nose_pull_r := tuning.NOSE_PULL_MULT * drag_factor * delta
+	nose_pull_r = min(nose_pull_r, nose_dir.angle_to(current_dir)) # dont overshoot
+	var nose_axis := nose_dir.cross(current_dir).normalized()
+	rotate(nose_axis, nose_pull_r)
+	
 
 	## velocity
 	velocity = new_velocity
+	if velocity.length() < 0.1:
+		velocity += Vector3.DOWN * 0.05
 
-	_hud.set_readout(pot_height, tuning.display_name, GliderInput.name_of(control_scheme))
-	# Top-right debug readout: the 10 most telling flight-model values.
+	set_stats(d_h, current_speed, pot_speed, new_speed, nose_dir, current_dir,
+		pot_speed_catchup, pot_dir_catchup)
+	move_and_slide()
+
+
+func set_stats(
+	d_h: float,
+	current_speed: float,
+	pot_speed: float,
+	new_speed: float,
+	nose_dir: Vector3,
+	current_dir: Vector3,
+	pot_speed_catchup: float,
+	pot_dir_catchup: float,
+) -> void:
+	_hud.set_readout(pot_height, tuning.DISPLAY_NAME, GliderInput.name_of(control_scheme))
 	var align := nose_dir.dot(current_dir)
 	_hud.set_stats({
 		"alt": position.y,
@@ -129,10 +142,9 @@ func _physics_process(delta: float) -> void:
 		"align": align,
 		"spd_catch": pot_speed_catchup,
 		"dir_catch": pot_dir_catchup,
-		"drag": tuning.drag * current_speed * (1.0 - align),
+		"drag": tuning.DRAG * current_speed * (1.0 - align),
 	})
-	move_and_slide()
-
+	
 
 func adjust_ailerons(delta: float) -> void:
 	var targets := GliderInput.read_targets(control_scheme)
@@ -140,9 +152,9 @@ func adjust_ailerons(delta: float) -> void:
 	ail_roll_target = targets.y
 	ail_yaw_target = targets.z
 
-	ail_pitch = move_toward(ail_pitch, ail_pitch_target, tuning.ail_pitch_speed * delta)
-	ail_roll = move_toward(ail_roll, ail_roll_target, tuning.ail_roll_speed * delta)
-	ail_yaw = move_toward(ail_yaw, ail_yaw_target, tuning.ail_yaw_speed * delta)
+	ail_pitch = move_toward(ail_pitch, ail_pitch_target, tuning.AIL_PITCH_SPEED * delta)
+	ail_roll = move_toward(ail_roll, ail_roll_target, tuning.AIL_ROLL_SPEED * delta)
+	ail_yaw = move_toward(ail_yaw, ail_yaw_target, tuning.AIL_YAW_SPEED * delta)
 
 	# Deflect each visual surface about its correct local hinge axis.
 	$Ailerons/Pitch.rotation.x = ail_pitch * -SURFACE_DEFLECT  # elevator (both together)
