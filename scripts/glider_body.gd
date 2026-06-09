@@ -29,6 +29,9 @@ var pitch_v := 0.0
 var roll_v := 0.0
 var yaw_v := 0.0
 
+## Air-brake friction: drops while braked, eases back to 1.0 otherwise.
+var air_friction := 1.0
+
 
 ## Pot height (stored potential energy as an equivalent altitude).
 var pot_height := 0.0
@@ -82,6 +85,12 @@ func _physics_process(delta: float) -> void:
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	#
+	## air brake — held brake kills friction so the craft drifts on its momentum.
+	if GliderInput.read_braked():
+		air_friction = 0.05
+	else:
+		air_friction = move_toward(air_friction, 1.0, 200.0 * delta)
+	#
 	## current values
 	var current_speed := velocity.length()
 	var current_dir := velocity.normalized() # TODO: look out for magnitude 0 velocity
@@ -89,7 +98,7 @@ func _physics_process(delta: float) -> void:
 		current_dir = Vector3.DOWN
 	#
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
-	var drag_factor := tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
+	var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
 	var rrate := 0.3 + 0.2 * sqrt(velocity.length()) #* nose_dot
 	#
@@ -108,8 +117,9 @@ func _physics_process(delta: float) -> void:
 	# new values
 	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
-	var dir_offset := nose_dir - current_dir
-	var pot_dir_catchup := tuning.POT_DIR_CATCHUP_MULT * current_speed * dir_offset.length()
+	var dir_offset := nose_dir.angle_to(current_dir)
+	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
+	var pot_dir_catchup := 0.1 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
 	var new_velocity := new_speed * new_dir
 	#
