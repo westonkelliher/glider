@@ -30,6 +30,9 @@ static func read_targets(scheme: Scheme) -> Vector3:
 		yaw = Input.get_axis("yaw_left", "yaw_right")
 	return Vector3(pitch, roll, yaw)
 
+static func read_braked() -> bool:
+	return Input.is_action_pressed("air_brake")
+
 
 static func name_of(scheme: Scheme) -> String:
 	return "ROCKET LEAGUE" if scheme == Scheme.RL else "PILOT"
