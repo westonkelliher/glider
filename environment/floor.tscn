@@ -17,6 +17,7 @@ size = Vector2(500, 500)
 
 [node name="Shape" type="CollisionShape3D" parent="." unique_id=1898934245]
 shape = SubResource("WorldBoundaryShape3D_ryoud")
+disabled = true
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=922797180]
 mesh = SubResource("PlaneMesh_wd3ws")
