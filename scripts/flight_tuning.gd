@@ -22,8 +22,8 @@ extends Resource
 
 ## Pot-height energy model.
 @export var POT_SPEED_CATCHUP_MULT := 0.5
-@export var POT_DIR_CATCHUP_MULT := 0.2
-@export var DRAG := 0.5 
+@export var POT_DIR_CATCHUP_MULT := 0.1
+@export var DRAG := 0.3
 
 #
 @export var NOSE_PULL_MULT := 0.2
@@ -47,6 +47,6 @@ static func play() -> FlightTuning:
 	t.ROLL_MULT = 5.5
 	t.YAW_MULT = 3.5
 	t.POT_SPEED_CATCHUP_MULT = 1.0
-	t.POT_DIR_CATCHUP_MULT = 0.25
+	t.POT_DIR_CATCHUP_MULT = 0.2
 	t.DRAG = 0.2
 	return t
