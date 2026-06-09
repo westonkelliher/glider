@@ -9,7 +9,7 @@ const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
 
 ## Flight tuning — TEST/PLAY presets, toggled live with T or the pause menu.
 var _tunings := [FlightTuning.test(), FlightTuning.play()]
-var _tuning_idx := 0
+var _tuning_idx := 1
 var tuning: FlightTuning
 
 
@@ -103,7 +103,7 @@ func _physics_process(delta: float) -> void:
 	#var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
 	var drag_factor := 1 - absf(nose_dot)
-	var rrate := 0.1 + 0.2 * sqrt(velocity.length()) #* nose_dot
+	var rrate := 0.2 + 0.15 * sqrt(velocity.length()) #* nose_dot
 	#
 	## adjust rotation
 	rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
