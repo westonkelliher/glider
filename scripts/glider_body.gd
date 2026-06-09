@@ -88,8 +88,10 @@ func _physics_process(delta: float) -> void:
 	## air brake — held brake kills friction so the craft drifts on its momentum.
 	if GliderInput.read_braked():
 		air_friction = 0.05
+		pull_in_wings(true)
 	else:
 		air_friction = move_toward(air_friction, 1.0, 200.0 * delta)
+		pull_in_wings(false)
 	#
 	## current values
 	var current_speed := velocity.length()
@@ -101,19 +103,21 @@ func _physics_process(delta: float) -> void:
 	#var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
 	var drag_factor := 1 - absf(nose_dot)
-	var rrate := 0.3 + 0.2 * sqrt(velocity.length()) #* nose_dot
+	var rrate := 0.1 + 0.2 * sqrt(velocity.length()) #* nose_dot
 	#
 	## adjust rotation
 	rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
 	rotate_object_local(Vector3.BACK, rrate * ail_roll * tuning.ROLL_MULT * delta)    # roll
 	rotate_object_local(Vector3.DOWN, rrate * ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
 	#
+	#
 	## speeds, directions and velocities from potential (pot) values
 	# pot values
 	if position.y > pot_height && position.y > 2.0:
 		pot_height = position.y
 	var d_h := pot_height - position.y
-	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h
+	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h ##########
+	pot_speed = min(pot_speed, 30.0) # max speed
 	#
 	# new values
 	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
@@ -140,8 +144,11 @@ func _physics_process(delta: float) -> void:
 	velocity = new_velocity + a_total
 	
 	# reduce pot_height towards low speed:
-	var d_h_2 := velocity.length()**2.0/(G*2.0)
-	#pot_height = move_toward(pot_height, position.y + d_h_2, 2.0 * delta)
+	var d_h_2 := pow(velocity.length(), 2)/(G*2.0)
+	print("dh2 ", d_h_2)
+	var dhd := absf(d_h - d_h_2)
+	var reduction_speed := 3.0 * dhd
+	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
 	
 	# keep from touching floor
 	if position.y < 1.0:
@@ -224,9 +231,17 @@ static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, 
 		var t := thresh1; thresh1 = thresh2; thresh2 = t
 		var v := val1; val1 = val2; val2 = v
 	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))
-	
-	
-	
+
+
+func pull_in_wings(inny: bool) -> void:
+	if inny:
+		$Mesh/Q/LWing.position.x = -.4
+		$Mesh/Q/RWing.position.x = 0.4
+	else:
+		$Mesh/Q/LWing.position.x = -.655
+		$Mesh/Q/RWing.position.x = 0.655
+
+
 func set_stats(
 	d_h: float,
 	current_speed: float,
