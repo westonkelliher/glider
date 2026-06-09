@@ -37,9 +37,9 @@ static func play() -> FlightTuning:
 	var t := FlightTuning.new()
 	t.DISPLAY_NAME = "PLAY"
 	# aileron speeds
-	t.AIL_PITCH_SPEED = 12.0
-	t.AIL_ROLL_SPEED = 10.0
-	t.AIL_YAW_SPEED = 5.0
+	t.AIL_PITCH_SPEED = 8.0
+	t.AIL_ROLL_SPEED = 7.0
+	t.AIL_YAW_SPEED = 4.0
 	t.AIL_DAMP_ZONES_SIZE = 0.5
 	t.AIL_ACC = 2.0
 	# max rotation speeds
