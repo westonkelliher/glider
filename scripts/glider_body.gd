@@ -36,6 +36,14 @@ var air_friction := 1.0
 var is_heavy := false
 var was_heavy := false
 var release_grace := 0.0 # seconds left where the release launch keeps its speed
+
+## GetHeavy ground slide: while touching terrain, ball physics replace flight.
+const SLIDE_FRIC := 0.1 # fraction of speed lost per second
+const SLIDE_FRIC_HEAVY := 0.005
+const SLIDE_MOVE_ACC := 30.0
+const SLIDE_MAX_MOVE_SPEED := 2.0
+var grounded := false
+var was_grounded := false
 var target_scale := 1.0
 var current_scale := 1.0
 
@@ -121,10 +129,11 @@ func _physics_process(delta: float) -> void:
 	var drag_factor := 1 - absf(nose_dot)
 	var rrate := 0.2 + 0.15 * sqrt(velocity.length()) #* nose_dot
 	#
-	## adjust rotation
-	rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
-	rotate_object_local(Vector3.BACK, rrate * ail_roll * tuning.ROLL_MULT * delta)    # roll
-	rotate_object_local(Vector3.DOWN, rrate * ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
+	## adjust rotation (airborne only — on the ground we're a ball, not a craft)
+	if not grounded:
+		rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
+		rotate_object_local(Vector3.BACK, rrate * ail_roll * tuning.ROLL_MULT * delta)    # roll
+		rotate_object_local(Vector3.DOWN, rrate * ail_yaw * tuning.YAW_MULT * delta)      # yaw (right = nose right)
 	#
 	#
 	## speeds, directions and velocities from potential (pot) values
@@ -134,7 +143,10 @@ func _physics_process(delta: float) -> void:
 	var new_speed := current_speed
 	var pot_speed_catchup := 0.0
 	var pot_dir_catchup := 0.0
-	if is_heavy:
+	if grounded:
+		## sliding — 100% GetHeavy ball physics; the flight model is fully off.
+		phys_slide(delta)
+	elif is_heavy:
 		## heavy — full ballistic: gravity only, momentum carries, no aero or
 		## energy model; pot_height freezes until the release refill.
 		velocity += G * tuning.HEAVY_GRAV_MULT * Vector3.DOWN * delta
@@ -192,23 +204,24 @@ func _physics_process(delta: float) -> void:
 		release_grace = 1.2
 	was_heavy = is_heavy
 
-	if Input.is_action_pressed("boost"):
+	if Input.is_action_pressed("boost") and not grounded:
 		pot_height += 30.0 * delta
 		velocity += nose_dir * 10.0 * delta
-	
-	# terrain skimming — deflect along the slope instead of stopping, so a heavy
-	# dive into a downslope keeps its speed along the hill (the valley swoop)
+
+	# ground contact — 100% GetHeavy: snap to the surface and deflect velocity
+	# along it; the lost normal component comes back from downhill gravity.
 	var gy := GroundMath.height(position.x, position.z)
-	if position.y < gy + 0.9:
+	grounded = position.y < gy + 0.9
+	if grounded:
 		position.y = gy + 0.9
 		var n := GroundMath.normal(position.x, position.z)
-		var pre_deflect_speed := velocity.length()
-		# take away the into-ground component of velocity
 		velocity -= n * minf(0.0, n.dot(velocity))
-		if velocity.length() > 0.001:
-			# keep the speed through the deflection, minus mild time-based ground friction
-			velocity = velocity.normalized() * pre_deflect_speed * pow(0.94, delta)
-		velocity += Vector3.UP*0.1
+	elif was_grounded:
+		# launched off the ground — hand the slide speed to the glide model with
+		# a grace window so the pot catchup doesn't instantly eat it
+		pot_height = maxf(pot_height, position.y + pow(velocity.length(), 2) / (2.0 * G))
+		release_grace = maxf(release_grace, 1.2)
+	was_grounded = grounded
 	
 	#if velocity.length() < 0.1:
 		#velocity += Vector3.DOWN * 0.05
@@ -284,6 +297,39 @@ static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, 
 		var t := thresh1; thresh1 = thresh2; thresh2 = t
 		var v := val1; val1 = val2; val2 = v
 	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))
+
+
+## GetHeavy slide physics, ported from its player.gd: gravity projected onto
+## the slope accelerates downhill, friction is near-zero while heavy, and WASD
+## gives the camera-relative steering nudge (capped like the original).
+func phys_slide(delta: float) -> void:
+	var grav := G * tuning.HEAVY_GRAV_MULT if is_heavy else G
+	var n := GroundMath.normal(position.x, position.z)
+	var downhill := Vector3.DOWN - n * n.dot(Vector3.DOWN)
+	if downhill.length() > 0.001:
+		downhill = downhill.normalized()
+		velocity += downhill * downhill.dot(Vector3.DOWN) * grav * delta
+	var fric := SLIDE_FRIC_HEAVY if is_heavy else SLIDE_FRIC
+	velocity *= pow(1.0 - fric, delta)
+	# input nudge
+	var input_dir := Vector3.ZERO
+	if Input.is_action_pressed("move_forward"):
+		input_dir += Vector3.FORWARD
+	if Input.is_action_pressed("move_back"):
+		input_dir -= Vector3.FORWARD
+	if Input.is_action_pressed("move_left"):
+		input_dir -= Vector3.RIGHT
+	if Input.is_action_pressed("move_right"):
+		input_dir += Vector3.RIGHT
+	if input_dir == Vector3.ZERO:
+		return
+	var cam := get_viewport().get_camera_3d()
+	var cam_rot := cam.global_rotation.y if cam else 0.0
+	var acc_unit := input_dir.normalized().rotated(Vector3.UP, cam_rot)
+	acc_unit = (acc_unit - n * n.dot(acc_unit)).normalized() # follow the slope
+	if velocity.dot(acc_unit) > SLIDE_MAX_MOVE_SPEED:
+		return
+	velocity += acc_unit * SLIDE_MOVE_ACC * delta
 
 
 func pull_in_wings(inny: bool) -> void:
