@@ -29,8 +29,15 @@ var pitch_v := 0.0
 var roll_v := 0.0
 var yaw_v := 0.0
 
-## Air-brake friction: drops while braked, eases back to 1.0 otherwise.
+## Air-brake friction: drops while heavy, eases back to 1.0 otherwise.
 var air_friction := 1.0
+
+## Heavy dive state (hold air_brake): tucked wings + extra gravity, release pops.
+var is_heavy := false
+var was_heavy := false
+var release_grace := 0.0 # seconds left where the release launch keeps its speed
+var target_scale := 1.0
+var current_scale := 1.0
 
 
 ## Pot height (stored potential energy as an equivalent altitude).
@@ -68,6 +75,12 @@ func menu_labels() -> Dictionary:
 	return {"tuning": tuning.DISPLAY_NAME, "control": GliderInput.name_of(control_scheme)}
 
 
+func _process(delta: float) -> void:
+	# Squash the visual mesh toward the dive scale; collision shape is untouched.
+	current_scale = move_toward(current_scale, target_scale, 2.0 * delta)
+	$Mesh.scale = Vector3.ONE * current_scale
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	# T / Back toggles TEST <-> PLAY tuning live.
 	if event.is_action_pressed("toggle_tuning"):
@@ -85,13 +98,18 @@ func _physics_process(delta: float) -> void:
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	#
-	## air brake — held brake kills friction so the craft drifts on its momentum.
-	if GliderInput.read_braked():
+	## heavy dive — held brake kills friction, tucks the wings (dive posture) and
+	## piles on gravity so altitude converts to speed fast.
+	is_heavy = GliderInput.read_heavy()
+	if is_heavy:
 		air_friction = 0.05
 		pull_in_wings(true)
+		target_scale = 0.78
 	else:
 		air_friction = move_toward(air_friction, 1.0, 200.0 * delta)
 		pull_in_wings(false)
+		target_scale = 1.0
+	var g_eff := G * tuning.HEAVY_GRAV_MULT if is_heavy else G
 	#
 	## current values
 	var current_speed := velocity.length()
@@ -116,11 +134,17 @@ func _physics_process(delta: float) -> void:
 	if position.y > pot_height && position.y > 2.0:
 		pot_height = position.y
 	var d_h := pot_height - position.y
-	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h ##########
-	pot_speed = min(pot_speed, 30.0) # max speed
+	var pot_speed := sqrt(d_h*g_eff*2) # solved for speed in terms of d_h ##########
+	# during the post-release grace the heavy cap still applies, so the launch
+	# carries instead of snapping back to cruise speed
+	release_grace = maxf(0.0, release_grace - delta)
+	var speed_cap := tuning.HEAVY_MAX_SPEED if (is_heavy or release_grace > 0.0) else tuning.MAX_SPEED
+	pot_speed = min(pot_speed, speed_cap)
 	#
 	# new values
 	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
+	if is_heavy:
+		pot_speed_catchup *= tuning.HEAVY_CATCHUP_MULT # speed builds urgently in the dive
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
 	var dir_offset := nose_dir.angle_to(current_dir)
 	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
@@ -135,17 +159,31 @@ func _physics_process(delta: float) -> void:
 	rotate(nose_axis, nose_pull_r)
 	#
 	## Accelerations
-	var a_gravity := G * Vector3.DOWN * delta
+	var a_gravity := g_eff * Vector3.DOWN * delta
 	var a_drag := tuning.DRAG * drag_factor * -velocity.normalized()
 	# Sum
 	var a_total := a_gravity + a_drag
 	#
 	## velocity
 	velocity = new_velocity + a_total
-	
-	# reduce pot_height towards low speed:
-	var d_h_2 := pow(velocity.length(), 2)/(G*2.0)
-	print("dh2 ", d_h_2)
+
+	## Release boost — Tiny-Wings pop the frame the dive ends.
+	if was_heavy and not is_heavy:
+		var rel_speed := velocity.length()
+		if rel_speed > 0.0:
+			velocity *= 1.0 / (1.0 - tuning.RELEASE_BOOST_RATIO)
+			velocity *= (rel_speed + tuning.RELEASE_BOOST_FLAT) / rel_speed
+			# lift scales with how fast we exit the dive
+			var speed_factor := rel_speed / tuning.MAX_SPEED
+			velocity += Vector3.UP * maxf(0.0, Vector3.UP.dot(velocity.normalized())) \
+				* tuning.RELEASE_LIFT * speed_factor
+		# refill the energy model so it doesn't immediately eat the boost
+		pot_height = maxf(pot_height, position.y + pow(velocity.length(), 2) / (2.0 * G))
+		release_grace = 1.2
+	was_heavy = is_heavy
+
+	# reduce pot_height towards low speed (heavy G while diving, else dives mint energy):
+	var d_h_2 := pow(velocity.length(), 2)/(g_eff*2.0)
 	var dhd := absf(d_h - d_h_2)
 	var reduction_speed := 2.2 * pow(dhd, 1.2)
 	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
@@ -154,12 +192,18 @@ func _physics_process(delta: float) -> void:
 		pot_height += 30.0 * delta
 		velocity += nose_dir * 10.0 * delta
 	
-	# keep from touching floor
-	if position.y < 1.0:
-		position.y = 1.0
-		# take away downward component of velocity
-		var down_of_v := Vector3.DOWN * Vector3.DOWN.dot(velocity)
-		velocity -= down_of_v
+	# terrain skimming — deflect along the slope instead of stopping, so a heavy
+	# dive into a downslope keeps its speed along the hill (the valley swoop)
+	var gy := GroundMath.height(position.x, position.z)
+	if position.y < gy + 0.9:
+		position.y = gy + 0.9
+		var n := GroundMath.normal(position.x, position.z)
+		var pre_deflect_speed := velocity.length()
+		# take away the into-ground component of velocity
+		velocity -= n * minf(0.0, n.dot(velocity))
+		if velocity.length() > 0.001:
+			# keep the speed through the deflection, minus mild time-based ground friction
+			velocity = velocity.normalized() * pre_deflect_speed * pow(0.94, delta)
 		velocity += Vector3.UP*0.1
 	
 	#if velocity.length() < 0.1:
@@ -197,10 +241,7 @@ func adjust_ailerons(delta: float) -> void:
 	# if we're close to the target, damp speed
 	var p_dist_to_target := absf(p_target - ail_pitch)
 	if p_dist_to_target < damp_size:
-		print('ye')
 		ail_pitch_speed = 0.03 + p_s * pow((p_dist_to_target+0.1)/(damp_size+0.1), 1.5)
-		print(p_target)
-		print(ail_pitch_speed)
 	ail_pitch = move_toward(ail_pitch, p_target, ail_pitch_speed * delta)
 	# roll
 	var r_dir := 1.0
@@ -260,7 +301,7 @@ func set_stats(
 	pot_speed_catchup: float,
 	pot_dir_catchup: float,
 ) -> void:
-	_hud.set_readout(pot_height, tuning.DISPLAY_NAME, GliderInput.name_of(control_scheme))
+	_hud.set_readout(pot_height, tuning.DISPLAY_NAME, GliderInput.name_of(control_scheme), is_heavy)
 	var align := nose_dir.dot(current_dir)
 	_hud.set_stats({
 		"alt": position.y,

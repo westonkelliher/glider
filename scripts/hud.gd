@@ -34,9 +34,10 @@ func _ready() -> void:
 	add_child(_stats_label)
 
 
-func set_readout(pot_height: float, tuning_name: String, scheme_name: String) -> void:
-	_pot_label.text = "pot height: %.1f m\ntuning: %s\nscheme: %s\n\n%s" \
-		% [pot_height, tuning_name, scheme_name, BINDS]
+func set_readout(pot_height: float, tuning_name: String, scheme_name: String, heavy: bool) -> void:
+	var heavy_line := "\n>> HEAVY <<" if heavy else ""
+	_pot_label.text = "pot height: %.1f m\ntuning: %s\nscheme: %s%s\n\n%s" \
+		% [pot_height, tuning_name, scheme_name, heavy_line, BINDS]
 
 
 ## Render an ordered name->value map as "name: 0.0" lines, fixed to one decimal

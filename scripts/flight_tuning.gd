@@ -28,6 +28,16 @@ extends Resource
 #
 @export var NOSE_PULL_MULT := 2.0
 
+## Heavy dive (hold air_brake) — Tiny-Wings style altitude-to-speed conversion.
+@export var MAX_SPEED := 30.0
+@export var HEAVY_GRAV_MULT := 2.4
+@export var HEAVY_MAX_SPEED := 48.0
+@export var HEAVY_CATCHUP_MULT := 2.5
+# release boost — pop applied the frame the dive ends
+@export var RELEASE_BOOST_RATIO := 0.12
+@export var RELEASE_BOOST_FLAT := 1.5
+@export var RELEASE_LIFT := 2.5
+
 
 static func test() -> FlightTuning:
 	return FlightTuning.new() # defaults above are the TEST preset
@@ -49,4 +59,12 @@ static func play() -> FlightTuning:
 	t.POT_SPEED_CATCHUP_MULT = 1.5
 	t.POT_DIR_CATCHUP_MULT = 0.2
 	t.DRAG = 0.2
+	# heavy dive — punchier than TEST
+	t.MAX_SPEED = 32.0
+	t.HEAVY_GRAV_MULT = 2.6
+	t.HEAVY_MAX_SPEED = 52.0
+	t.HEAVY_CATCHUP_MULT = 2.8
+	t.RELEASE_BOOST_RATIO = 0.14
+	t.RELEASE_BOOST_FLAT = 2.0
+	t.RELEASE_LIFT = 3.0
 	return t

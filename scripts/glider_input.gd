@@ -30,7 +30,7 @@ static func read_targets(scheme: Scheme) -> Vector3:
 		yaw = Input.get_axis("yaw_left", "yaw_right")
 	return Vector3(pitch, roll, yaw)
 
-static func read_braked() -> bool:
+static func read_heavy() -> bool:
 	return Input.is_action_pressed("air_brake")
 
 
