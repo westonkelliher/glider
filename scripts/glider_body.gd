@@ -126,7 +126,7 @@ func _physics_process(delta: float) -> void:
 	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
 	var pot_dir_catchup := 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
-	var new_velocity := new_speed * new_dir
+	var new_velocity := new_speed * new_dir + Vector3.UP*0.01
 	#
 	## Nose Pull
 	var nose_pull_r := tuning.NOSE_PULL_MULT * drag_factor * delta
@@ -147,12 +147,20 @@ func _physics_process(delta: float) -> void:
 	var d_h_2 := pow(velocity.length(), 2)/(G*2.0)
 	print("dh2 ", d_h_2)
 	var dhd := absf(d_h - d_h_2)
-	var reduction_speed := 3.0 * dhd
+	var reduction_speed := 2.2 * pow(dhd, 1.2)
 	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
+	
+	if Input.is_action_pressed("boost"):
+		pot_height += 30.0 * delta
+		velocity += nose_dir * 10.0 * delta
 	
 	# keep from touching floor
 	if position.y < 1.0:
 		position.y = 1.0
+		# take away downward component of velocity
+		var down_of_v := Vector3.DOWN * Vector3.DOWN.dot(velocity)
+		velocity -= down_of_v
+		velocity += Vector3.UP*0.1
 	
 	#if velocity.length() < 0.1:
 		#velocity += Vector3.DOWN * 0.05
