@@ -98,8 +98,9 @@ func _physics_process(delta: float) -> void:
 		current_dir = Vector3.DOWN
 	#
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
-	var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
+	#var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
+	var drag_factor := 1 - absf(nose_dot)
 	var rrate := 0.3 + 0.2 * sqrt(velocity.length()) #* nose_dot
 	#
 	## adjust rotation
@@ -119,7 +120,7 @@ func _physics_process(delta: float) -> void:
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
 	var dir_offset := nose_dir.angle_to(current_dir)
 	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
-	var pot_dir_catchup := 0.1 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
+	var pot_dir_catchup := 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
 	var new_velocity := new_speed * new_dir
 	#
@@ -131,12 +132,21 @@ func _physics_process(delta: float) -> void:
 	#
 	## Accelerations
 	var a_gravity := G * Vector3.DOWN * delta
-	var a_drag := 10*drag_factor * -velocity.normalized()
+	var a_drag := tuning.DRAG * drag_factor * -velocity.normalized()
 	# Sum
-	var a_total := a_gravity
+	var a_total := a_gravity + a_drag
 	#
 	## velocity
 	velocity = new_velocity + a_total
+	
+	# reduce pot_height towards low speed:
+	var d_h_2 := velocity.length()**2.0/(G*2.0)
+	#pot_height = move_toward(pot_height, position.y + d_h_2, 2.0 * delta)
+	
+	# keep from touching floor
+	if position.y < 1.0:
+		position.y = 1.0
+	
 	#if velocity.length() < 0.1:
 		#velocity += Vector3.DOWN * 0.05
 	#
