@@ -98,18 +98,16 @@ func _physics_process(delta: float) -> void:
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	#
-	## heavy dive — held brake kills friction, tucks the wings (dive posture) and
-	## piles on gravity so altitude converts to speed fast.
+	## air brake — held brake kills friction so the craft drifts on its momentum.
+	## heavy dive — tucks the wings and goes full ballistic.
 	is_heavy = GliderInput.read_heavy()
-	if is_heavy:
+	var braked := GliderInput.read_braked()
+	if braked:
 		air_friction = 0.05
-		pull_in_wings(true)
-		target_scale = 0.78
 	else:
 		air_friction = move_toward(air_friction, 1.0, 200.0 * delta)
-		pull_in_wings(false)
-		target_scale = 1.0
-	var g_eff := G * tuning.HEAVY_GRAV_MULT if is_heavy else G
+	pull_in_wings(braked or is_heavy)
+	target_scale = 0.78 if is_heavy else 1.0
 	#
 	## current values
 	var current_speed := velocity.length()
@@ -130,42 +128,54 @@ func _physics_process(delta: float) -> void:
 	#
 	#
 	## speeds, directions and velocities from potential (pot) values
-	# pot values
-	if position.y > pot_height && position.y > 2.0:
-		pot_height = position.y
-	var d_h := pot_height - position.y
-	var pot_speed := sqrt(d_h*g_eff*2) # solved for speed in terms of d_h ##########
-	# during the post-release grace the heavy cap still applies, so the launch
-	# carries instead of snapping back to cruise speed
 	release_grace = maxf(0.0, release_grace - delta)
-	var speed_cap := tuning.HEAVY_MAX_SPEED if (is_heavy or release_grace > 0.0) else tuning.MAX_SPEED
-	pot_speed = min(pot_speed, speed_cap)
-	#
-	# new values
-	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
+	var d_h := pot_height - position.y
+	var pot_speed := 0.0
+	var new_speed := current_speed
+	var pot_speed_catchup := 0.0
+	var pot_dir_catchup := 0.0
 	if is_heavy:
-		pot_speed_catchup *= tuning.HEAVY_CATCHUP_MULT # speed builds urgently in the dive
-	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
-	var dir_offset := nose_dir.angle_to(current_dir)
-	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
-	var pot_dir_catchup := 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
-	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
-	var new_velocity := new_speed * new_dir + Vector3.UP*0.01
-	#
-	## Nose Pull
-	var nose_pull_r := tuning.NOSE_PULL_MULT * drag_factor * delta
-	nose_pull_r = min(nose_pull_r, nose_dir.angle_to(current_dir)) # dont overshoot
-	var nose_axis := nose_dir.cross(current_dir).normalized()
-	rotate(nose_axis, nose_pull_r)
-	#
-	## Accelerations
-	var a_gravity := g_eff * Vector3.DOWN * delta
-	var a_drag := tuning.DRAG * drag_factor * -velocity.normalized()
-	# Sum
-	var a_total := a_gravity + a_drag
-	#
-	## velocity
-	velocity = new_velocity + a_total
+		## heavy — full ballistic: gravity only, momentum carries, no aero or
+		## energy model; pot_height freezes until the release refill.
+		velocity += G * tuning.HEAVY_GRAV_MULT * Vector3.DOWN * delta
+	else:
+		# pot values
+		if position.y > pot_height && position.y > 2.0:
+			pot_height = position.y
+		d_h = pot_height - position.y
+		pot_speed = sqrt(maxf(0.0, d_h)*G*2) # solved for speed in terms of d_h ##########
+		# during the post-release grace the heavy cap still applies, so the launch
+		# carries instead of snapping back to cruise speed
+		var speed_cap := tuning.HEAVY_MAX_SPEED if release_grace > 0.0 else tuning.MAX_SPEED
+		pot_speed = min(pot_speed, speed_cap)
+		#
+		# new values
+		pot_speed_catchup = 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
+		new_speed = move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
+		var dir_offset := nose_dir.angle_to(current_dir)
+		var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
+		pot_dir_catchup = 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
+		var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
+		var new_velocity := new_speed * new_dir + Vector3.UP*0.01
+		#
+		## Nose Pull
+		var nose_pull_r := tuning.NOSE_PULL_MULT * drag_factor * delta
+		nose_pull_r = min(nose_pull_r, nose_dir.angle_to(current_dir)) # dont overshoot
+		var nose_axis := nose_dir.cross(current_dir).normalized()
+		rotate(nose_axis, nose_pull_r)
+		#
+		## Accelerations
+		var a_gravity := G * Vector3.DOWN * delta
+		var a_drag := tuning.DRAG * drag_factor * -velocity.normalized()
+		#
+		## velocity
+		velocity = new_velocity + a_gravity + a_drag
+		#
+		# reduce pot_height towards low speed:
+		var d_h_2 := pow(velocity.length(), 2)/(G*2.0)
+		var dhd := absf(d_h - d_h_2)
+		var reduction_speed := 2.2 * pow(dhd, 1.2)
+		pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
 
 	## Release boost — Tiny-Wings pop the frame the dive ends.
 	if was_heavy and not is_heavy:
@@ -182,12 +192,6 @@ func _physics_process(delta: float) -> void:
 		release_grace = 1.2
 	was_heavy = is_heavy
 
-	# reduce pot_height towards low speed (heavy G while diving, else dives mint energy):
-	var d_h_2 := pow(velocity.length(), 2)/(g_eff*2.0)
-	var dhd := absf(d_h - d_h_2)
-	var reduction_speed := 2.2 * pow(dhd, 1.2)
-	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
-	
 	if Input.is_action_pressed("boost"):
 		pot_height += 30.0 * delta
 		velocity += nose_dir * 10.0 * delta

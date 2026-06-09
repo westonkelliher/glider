@@ -7,6 +7,8 @@ const BINDS := "[binds]\n" \
 	+ "pitch/roll: W A S D\n" \
 	+ "yaw (pilot): Q E / LB RB\n" \
 	+ "air roll (RL): Shift / LB\n" \
+	+ "air brake: Space / X\n" \
+	+ "heavy: F / A\n" \
 	+ "camera: right stick\n" \
 	+ "tuning TEST/PLAY: T / Back\n" \
 	+ "scheme RL/PILOT: C / Start\n" \

@@ -28,11 +28,10 @@ extends Resource
 #
 @export var NOSE_PULL_MULT := 2.0
 
-## Heavy dive (hold air_brake) — Tiny-Wings style altitude-to-speed conversion.
+## Heavy dive (hold heavy) — full-ballistic altitude-to-speed conversion.
 @export var MAX_SPEED := 30.0
 @export var HEAVY_GRAV_MULT := 2.4
-@export var HEAVY_MAX_SPEED := 48.0
-@export var HEAVY_CATCHUP_MULT := 2.5
+@export var HEAVY_MAX_SPEED := 48.0 # pot-speed cap during the post-release grace
 # release boost — pop applied the frame the dive ends
 @export var RELEASE_BOOST_RATIO := 0.12
 @export var RELEASE_BOOST_FLAT := 1.5
@@ -63,7 +62,6 @@ static func play() -> FlightTuning:
 	t.MAX_SPEED = 32.0
 	t.HEAVY_GRAV_MULT = 2.6
 	t.HEAVY_MAX_SPEED = 52.0
-	t.HEAVY_CATCHUP_MULT = 2.8
 	t.RELEASE_BOOST_RATIO = 0.14
 	t.RELEASE_BOOST_FLAT = 2.0
 	t.RELEASE_LIFT = 3.0
