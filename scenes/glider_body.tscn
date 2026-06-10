@@ -50,8 +50,8 @@ size = Vector3(1, 0.1, 1)
 material = ExtResource("4_1mgfi")
 size = Vector3(2, 1, 0.1)
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_aylop"]
-height = 0.2
+[sub_resource type="SphereShape3D" id="SphereShape3D_aylop"]
+radius = 0.5
 
 [sub_resource type="BoxMesh" id="BoxMesh_qut1m"]
 
@@ -98,7 +98,7 @@ mesh = SubResource("PrismMesh_3gpux")
 
 [node name="Shape" type="CollisionShape3D" parent="." unique_id=1877100831]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
-shape = SubResource("CylinderShape3D_aylop")
+shape = SubResource("SphereShape3D_aylop")
 
 [node name="Ailerons" type="Node3D" parent="." unique_id=1488725268]
 transform = Transform3D(0.06, 0, 0, 0, -2.6226832e-09, 0.06, 0, -0.06, -2.6226832e-09, 0, 0.07793358, 0.43670166)
