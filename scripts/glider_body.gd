@@ -42,6 +42,11 @@ const SLIDE_FRIC := 0.1 # fraction of speed lost per second
 const SLIDE_FRIC_HEAVY := 0.005
 const SLIDE_MOVE_ACC := 30.0
 const SLIDE_MAX_MOVE_SPEED := 2.0
+const SLIDE_STEER_RATE := 1.6 # rad/s of velocity carve at full stick
+const SLIDE_NOSE_LEAD := 0.35 # rad the nose leads into the steer
+const SLIDE_ORIENT_RATE := 8.0 # how fast the body eases onto the surface
+const SLIDE_STICK_DIST := 2.4 # belly suction zone above the surface
+const SLIDE_STICK_ACC := 30.0
 var grounded := false
 var was_grounded := false
 var target_scale := 1.0
@@ -211,11 +216,17 @@ func _physics_process(delta: float) -> void:
 	# ground contact — 100% GetHeavy: snap to the surface and deflect velocity
 	# along it; the lost normal component comes back from downhill gravity.
 	var gy := GroundMath.height(position.x, position.z)
-	grounded = position.y < gy + 0.9
+	var gap := position.y - gy
+	grounded = gap < 0.9
 	if grounded:
 		position.y = gy + 0.9
 		var n := GroundMath.normal(position.x, position.z)
 		velocity -= n * minf(0.0, n.dot(velocity))
+	elif was_grounded and gap < SLIDE_STICK_DIST and velocity.y < 5.0:
+		# belly stays on the ground over small bumps: suck back to the surface
+		# (a fast launch or release pop escapes the suction zone)
+		grounded = true
+		velocity += Vector3.DOWN * SLIDE_STICK_ACC * delta
 	elif was_grounded:
 		# launched off the ground — hand the slide speed to the glide model with
 		# a grace window so the pot catchup doesn't instantly eat it
@@ -300,8 +311,9 @@ static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, 
 
 
 ## GetHeavy slide physics, ported from its player.gd: gravity projected onto
-## the slope accelerates downhill, friction is near-zero while heavy, and WASD
-## gives the camera-relative steering nudge (capped like the original).
+## the slope accelerates downhill, friction is near-zero while heavy. Stick X
+## carves the velocity about the surface normal; the body keeps its belly on
+## the slope with the nose tangent along the velocity, leading into the steer.
 func phys_slide(delta: float) -> void:
 	var grav := G * tuning.HEAVY_GRAV_MULT if is_heavy else G
 	var n := GroundMath.normal(position.x, position.z)
@@ -311,25 +323,26 @@ func phys_slide(delta: float) -> void:
 		velocity += downhill * downhill.dot(Vector3.DOWN) * grav * delta
 	var fric := SLIDE_FRIC_HEAVY if is_heavy else SLIDE_FRIC
 	velocity *= pow(1.0 - fric, delta)
-	# input nudge
-	var input_dir := Vector3.ZERO
-	if Input.is_action_pressed("move_forward"):
-		input_dir += Vector3.FORWARD
-	if Input.is_action_pressed("move_back"):
-		input_dir -= Vector3.FORWARD
-	if Input.is_action_pressed("move_left"):
-		input_dir -= Vector3.RIGHT
-	if Input.is_action_pressed("move_right"):
-		input_dir += Vector3.RIGHT
-	if input_dir == Vector3.ZERO:
-		return
-	var cam := get_viewport().get_camera_3d()
-	var cam_rot := cam.global_rotation.y if cam else 0.0
-	var acc_unit := input_dir.normalized().rotated(Vector3.UP, cam_rot)
-	acc_unit = (acc_unit - n * n.dot(acc_unit)).normalized() # follow the slope
-	if velocity.dot(acc_unit) > SLIDE_MAX_MOVE_SPEED:
-		return
-	velocity += acc_unit * SLIDE_MOVE_ACC * delta
+	# carve steering — stick right turns right
+	var stick_x := Input.get_axis("move_left", "move_right")
+	velocity = velocity.rotated(n, -stick_x * SLIDE_STEER_RATE * delta)
+	# forward/back nudge (GetHeavy style, camera-relative, capped)
+	var fb := Input.get_axis("move_back", "move_forward")
+	if absf(fb) > 0.0:
+		var cam := get_viewport().get_camera_3d()
+		var cam_rot := cam.global_rotation.y if cam else 0.0
+		var acc_unit := (Vector3.FORWARD * fb).rotated(Vector3.UP, cam_rot)
+		acc_unit = (acc_unit - n * n.dot(acc_unit)).normalized() # follow the slope
+		if velocity.dot(acc_unit) < SLIDE_MAX_MOVE_SPEED:
+			velocity += acc_unit * SLIDE_MOVE_ACC * delta
+	# orientation: belly on the slope, nose tangent along the velocity
+	var vel_tang := velocity - n * n.dot(velocity)
+	if vel_tang.length() > 0.5:
+		var fwd := vel_tang.normalized().rotated(n, -stick_x * SLIDE_NOSE_LEAD)
+		var target := Basis.looking_at(fwd, n).get_rotation_quaternion()
+		var q := transform.basis.get_rotation_quaternion().slerp(
+			target, minf(1.0, SLIDE_ORIENT_RATE * delta))
+		transform.basis = Basis(q).scaled(transform.basis.get_scale())
 
 
 func pull_in_wings(inny: bool) -> void:
