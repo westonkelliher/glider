@@ -47,6 +47,7 @@ const SLIDE_NOSE_LEAD := 0.35 # rad the nose leads into the steer
 const SLIDE_ORIENT_RATE := 8.0 # how fast the body eases onto the surface
 const SLIDE_STICK_DIST := 2.4 # belly suction zone above the surface
 const SLIDE_STICK_ACC := 30.0
+const BODY_CLEAR := 0.9 # contact distance from center to slope, along the normal
 var grounded := false
 var was_grounded := false
 var target_scale := 1.0
@@ -215,14 +216,17 @@ func _physics_process(delta: float) -> void:
 
 	# ground contact — 100% GetHeavy: snap to the surface and deflect velocity
 	# along it; the lost normal component comes back from downhill gravity.
+	# Contact distance is measured along the surface normal (vertical gap lies
+	# on steep slopes — the sphere touches the hillside long before the ground
+	# under its center is close).
 	var gy := GroundMath.height(position.x, position.z)
-	var gap := position.y - gy
-	grounded = gap < 0.9
+	var n := GroundMath.normal(position.x, position.z)
+	var clearance := (position.y - gy) * n.y
+	grounded = clearance < BODY_CLEAR
 	if grounded:
-		position.y = gy + 0.9
-		var n := GroundMath.normal(position.x, position.z)
+		position += n * (BODY_CLEAR - clearance)
 		velocity -= n * minf(0.0, n.dot(velocity))
-	elif was_grounded and gap < SLIDE_STICK_DIST and velocity.y < 5.0:
+	elif was_grounded and clearance < SLIDE_STICK_DIST and velocity.y < 5.0:
 		# belly stays on the ground over small bumps: suck back to the surface
 		# (a fast launch or release pop escapes the suction zone)
 		grounded = true
@@ -242,7 +246,13 @@ func _physics_process(delta: float) -> void:
 	#
 	#velocity = Vector3.ZERO# TODONOW uncomment
 	#rotation = Vector3.ZERO# TODONOW uncomment
-	move_and_slide()
+	if grounded:
+		# single authority on the ground (like GetHeavy): we already snapped and
+		# deflected against the analytic surface, so integrate directly — engine
+		# wall-sliding against the faceted collider would fight it and eat speed.
+		position += velocity * delta
+	else:
+		move_and_slide()
 
 
 var p_is_start := true
@@ -335,13 +345,15 @@ func phys_slide(delta: float) -> void:
 		acc_unit = (acc_unit - n * n.dot(acc_unit)).normalized() # follow the slope
 		if velocity.dot(acc_unit) < SLIDE_MAX_MOVE_SPEED:
 			velocity += acc_unit * SLIDE_MOVE_ACC * delta
-	# orientation: belly on the slope, nose tangent along the velocity
+	# orientation: belly on the slope, nose tangent along the velocity — eased
+	# in by speed so the nose doesn't wobble while the ball just rocks in a bowl
 	var vel_tang := velocity - n * n.dot(velocity)
-	if vel_tang.length() > 0.5:
+	if vel_tang.length() > 1.0:
+		var orient_w := SLIDE_ORIENT_RATE * clampf((vel_tang.length() - 1.0) / 4.0, 0.0, 1.0)
 		var fwd := vel_tang.normalized().rotated(n, -stick_x * SLIDE_NOSE_LEAD)
 		var target := Basis.looking_at(fwd, n).get_rotation_quaternion()
 		var q := transform.basis.get_rotation_quaternion().slerp(
-			target, minf(1.0, SLIDE_ORIENT_RATE * delta))
+			target, minf(1.0, orient_w * delta))
 		transform.basis = Basis(q).scaled(transform.basis.get_scale())
 
 

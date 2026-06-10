@@ -57,7 +57,7 @@ radius = 0.5
 
 [node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
-floor_max_angle = 0.43284166
+floor_max_angle = 1.2
 script = ExtResource("1_kiolu")
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=8097921]
