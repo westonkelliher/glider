@@ -77,6 +77,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("toggle_scheme"):
 		toggle_control()
 		_menu.refresh_labels()
+	if Input.action_press("launch"):
+		# launch missile
+		
 
 
 func _physics_process(delta: float) -> void:
@@ -104,6 +107,8 @@ func _physics_process(delta: float) -> void:
 	var nose_dot := velocity.normalized().dot(nose_dir)
 	var drag_factor := 1 - absf(nose_dot)
 	var rrate := 0.2 + 0.15 * sqrt(velocity.length()) #* nose_dot
+	if GliderInput.read_braked():
+		rrate = 0.8 + 0.1 * sqrt(velocity.length()) #* nose_dot
 	#
 	## adjust rotation
 	rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
