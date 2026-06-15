@@ -54,11 +54,18 @@ size = Vector3(2, 1, 0.1)
 material = ExtResource("4_1mgfi")
 size = Vector3(0.8, 0.09, 0.8)
 
+[sub_resource type="BoxMesh" id="BoxMesh_ls660"]
+material = ExtResource("4_1mgfi")
+size = Vector3(0.8, 0.2, 0.1)
+
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_260ag"]
 points = PackedVector3Array(-0.8, 0.2, 0.45, -0.8, 0, 0.45, 0.8, 0.2, 0.45, 0.8, 0, 0.45, 0, 0.2, -0.8, 0, 0, -0.8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_260ag"]
 size = Vector3(0.8, 0.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1mgfi"]
+size = Vector3(0.8, 0.4, 0.1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_qut1m"]
 
@@ -107,6 +114,10 @@ mesh = SubResource("PrismMesh_3gpux")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.32)
 mesh = SubResource("BoxMesh_260ag")
 
+[node name="Pad" type="MeshInstance3D" parent="Mesh" unique_id=195482526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.055, -0.675)
+mesh = SubResource("BoxMesh_ls660")
+
 [node name="Shape" type="CollisionShape3D" parent="." unique_id=1877100831]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.013245535, 0)
 shape = SubResource("ConvexPolygonShape3D_260ag")
@@ -114,6 +125,10 @@ shape = SubResource("ConvexPolygonShape3D_260ag")
 [node name="Box" type="CollisionShape3D" parent="Shape" unique_id=1233452659]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -0.42)
 shape = SubResource("BoxShape3D_260ag")
+
+[node name="Box2" type="CollisionShape3D" parent="Shape" unique_id=325087073]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.775)
+shape = SubResource("BoxShape3D_1mgfi")
 
 [node name="Ailerons" type="Node3D" parent="." unique_id=1488725268]
 transform = Transform3D(0.06, 0, 0, 0, -2.6226832e-09, 0.06, 0, -0.06, -2.6226832e-09, 0, 0.07793358, 0.43670166)
