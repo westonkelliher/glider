@@ -12,7 +12,7 @@ extends Node3D
 # FREE: manual mouse/stick aim. BALL: keep the ball framed (RL ball cam).
 # VELOCITY: look down the glider's travel direction (RL default cam).
 enum Mode { FREE, BALL, VELOCITY }
-var mode: Mode = Mode.FREE
+var mode: Mode = Mode.BALL
 
 var yaw: float = 0.0
 var pitch: float = 0.0
