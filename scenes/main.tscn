@@ -38,6 +38,10 @@ script = ExtResource("1_world")
 [node name="GliderBody" parent="." unique_id=786574907 instance=ExtResource("2_0wfyh")]
 transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 2.9999924, 52.94013, 70.93966)
 
+[node name="AIGlider" parent="." instance=ExtResource("2_0wfyh")]
+transform = Transform3D(-2.5, 0, 0, 0, 2.5, 0, 0, 0, -2.5, 0, 50, -60)
+is_ai = true
+
 [node name="Ball" parent="." unique_id=1901848942 instance=ExtResource("4_ball")]
 transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 3, 2, 40)
 

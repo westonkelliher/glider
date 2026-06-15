@@ -49,17 +49,24 @@ var _hud: CanvasLayer
 
 
 ## Controls.
+@export var is_ai := false
 var control_scheme := GliderInput.Scheme.RL
 var _menu: CanvasLayer
+var controller: RefCounted
+var _spawn_transform: Transform3D
 
 
 func _ready() -> void:
 	tuning = _tunings[_tuning_idx]
-	_hud = HUD.new()
-	add_child(_hud)
-	_menu = PauseMenu.new()
-	_menu.glider = self
-	add_child(_menu)
+	_spawn_transform = global_transform
+	add_to_group("glider")
+	controller = AiController.new() if is_ai else HumanController.new()
+	if not is_ai:
+		_hud = HUD.new()
+		add_child(_hud)
+		_menu = PauseMenu.new()
+		_menu.glider = self
+		add_child(_menu)
 
 
 ## --- Tuning / control toggles (also driven by the pause menu) ------------
@@ -79,6 +86,8 @@ func menu_labels() -> Dictionary:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_ai:
+		return
 	# T / Back toggles TEST <-> PLAY tuning live.
 	if event.is_action_pressed("toggle_tuning"):
 		toggle_tuning()
@@ -103,12 +112,13 @@ func launch_missile() -> void:
 
 func _physics_process(delta: float) -> void:
 	## inputs
-	adjust_ailerons(delta)
+	var ctl: GliderControls = controller.sample(self, control_scheme)
+	adjust_ailerons(delta, ctl.targets)
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	#
 	## air brake — held brake kills friction so the craft drifts on its momentum.
-	if GliderInput.read_braked():
+	if ctl.braked:
 		air_friction = 0.05
 		pull_in_wings(true)
 	else:
@@ -126,7 +136,7 @@ func _physics_process(delta: float) -> void:
 	var nose_dot := velocity.normalized().dot(nose_dir)
 	var drag_factor := (1 - absf(nose_dot))*air_friction
 	var rrate := 0.5 + 0.1 * sqrt(velocity.length()) #* nose_dot
-	if GliderInput.read_braked():
+	if ctl.braked:
 		rrate = 0.8 + 0.06 * sqrt(velocity.length()) #* nose_dot
 	#rrate = 1.0
 	#
@@ -170,16 +180,15 @@ func _physics_process(delta: float) -> void:
 	
 	# reduce pot_height towards low speed:
 	var d_h_2 := pow(velocity.length(), 2)/(G*2.0)
-	print("dh2 ", d_h_2)
 	var dhd := absf(d_h - d_h_2)
 	var reduction_speed := 2.2 * pow(dhd, 1.2)
 	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
 	
-	if Input.is_action_pressed("boost"):
+	if ctl.boost:
 		pot_height += 30.0 * delta
 		velocity += nose_dir * 10.0 * delta
 
-	var slow := Input.get_action_strength("slow_down")
+	var slow := ctl.slow
 	if slow > 0.0 and current_speed > 1.0:
 		# flat component
 		pot_height -= 45.0 * slow * delta
@@ -222,10 +231,26 @@ func apply_impulse(impulse: Vector3) -> void:
 	_external_impulse += impulse
 
 
+## Restore the glider to its spawn pose and zero all motion/aileron state.
+## Intended for the referee to call after a goal.
+func reset_to_spawn() -> void:
+	global_transform = _spawn_transform
+	velocity = Vector3.ZERO
+	pot_height = global_position.y
+	ail_pitch = 0.0
+	ail_pitch_target = 0.0
+	ail_pitch_speed = 0.0
+	ail_roll = 0.0
+	ail_roll_target = 0.0
+	ail_roll_speed = 0.0
+	ail_yaw = 0.0
+	ail_yaw_target = 0.0
+	ail_yaw_speed = 0.0
+
+
 var p_is_start := true
 
-func adjust_ailerons(delta: float) -> void:
-	var targets := GliderInput.read_targets(control_scheme)
+func adjust_ailerons(delta: float, targets: Vector3) -> void:
 	var p_target := targets.x
 	var r_target := targets.y
 	var y_target := targets.z
@@ -246,10 +271,7 @@ func adjust_ailerons(delta: float) -> void:
 	# if we're close to the target, damp speed
 	var p_dist_to_target := absf(p_target - ail_pitch)
 	if p_dist_to_target < damp_size:
-		print('ye')
 		ail_pitch_speed = 0.03 + p_s * pow((p_dist_to_target+0.1)/(damp_size+0.1), 1.5)
-		print(p_target)
-		print(ail_pitch_speed)
 	ail_pitch = move_toward(ail_pitch, p_target, ail_pitch_speed * delta)
 	# roll
 	var r_dir := 1.0
@@ -309,6 +331,8 @@ func set_stats(
 	pot_speed_catchup: float,
 	pot_dir_catchup: float,
 ) -> void:
+	if not _hud:
+		return
 	_hud.set_readout(pot_height, tuning.DISPLAY_NAME, GliderInput.name_of(control_scheme))
 	var align := nose_dir.dot(current_dir)
 	_hud.set_stats({

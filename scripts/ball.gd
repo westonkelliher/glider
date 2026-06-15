@@ -21,6 +21,7 @@ var last_velocity := Vector3.ZERO
 
 
 func _ready() -> void:
+	add_to_group("ball")
 	var shape: Shape3D = $Shape.shape
 	if shape is SphereShape3D:
 		radius = shape.radius * scale.x

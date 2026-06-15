@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://co2dvg8udnvto"]
+[gd_scene load_steps=2 format=3 uid="uid://co2dvg8udnvto"]
+
+[ext_resource type="Script" path="res://environment/referee.gd" id="1_ref"]
 
 ; Rocket-league-style arena: walls visible only from the inside (front-culled,
 ; semi-transparent), with a goal-shaped opening in each end wall. Goal zones are
@@ -66,6 +68,7 @@ size = Vector3(3, 36, 30)
 size = Vector3(80, 3, 30)
 
 [node name="Arena" type="StaticBody3D"]
+script = ExtResource("1_ref")
 
 [node name="WallEast" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 35, 0)
@@ -197,6 +200,7 @@ shape = SubResource("shape_goal_roof")
 
 [node name="GoalNorth" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, 215)
+collision_mask = 2
 
 [node name="Mesh" type="MeshInstance3D" parent="GoalNorth"]
 mesh = SubResource("mesh_goal")
@@ -207,6 +211,7 @@ shape = SubResource("shape_goal")
 
 [node name="GoalSouth" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, -215)
+collision_mask = 2
 
 [node name="Mesh" type="MeshInstance3D" parent="GoalSouth"]
 mesh = SubResource("mesh_goal")
