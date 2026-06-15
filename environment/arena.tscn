@@ -1,0 +1,216 @@
+[gd_scene format=3 uid="uid://co2dvg8udnvto"]
+
+; Rocket-league-style arena: walls visible only from the inside (front-culled,
+; semi-transparent), with a goal-shaped opening in each end wall. Goal zones are
+; Area3D regions (shape + collision only, no functionality).
+
+[sub_resource type="StandardMaterial3D" id="wall_mat"]
+transparency = 1
+albedo_color = Color(0.55, 0.75, 1, 0.12)
+roughness = 0.4
+
+[sub_resource type="StandardMaterial3D" id="goal_blue_mat"]
+transparency = 1
+albedo_color = Color(0.2, 0.5, 1, 0.22)
+
+[sub_resource type="StandardMaterial3D" id="goal_orange_mat"]
+transparency = 1
+albedo_color = Color(1, 0.5, 0.15, 0.22)
+
+[sub_resource type="BoxMesh" id="mesh_side"]
+material = SubResource("wall_mat")
+size = Vector3(3, 70, 400)
+
+[sub_resource type="BoxMesh" id="mesh_pillar"]
+material = SubResource("wall_mat")
+size = Vector3(80, 70, 3)
+
+[sub_resource type="BoxMesh" id="mesh_lintel"]
+material = SubResource("wall_mat")
+size = Vector3(80, 34, 3)
+
+[sub_resource type="BoxMesh" id="mesh_goal"]
+size = Vector3(80, 36, 30)
+
+[sub_resource type="BoxMesh" id="mesh_goal_back"]
+material = SubResource("wall_mat")
+size = Vector3(80, 36, 3)
+
+[sub_resource type="BoxMesh" id="mesh_goal_side"]
+material = SubResource("wall_mat")
+size = Vector3(3, 36, 30)
+
+[sub_resource type="BoxMesh" id="mesh_goal_roof"]
+material = SubResource("wall_mat")
+size = Vector3(80, 3, 30)
+
+[sub_resource type="BoxShape3D" id="shape_side"]
+size = Vector3(3, 70, 400)
+
+[sub_resource type="BoxShape3D" id="shape_pillar"]
+size = Vector3(80, 70, 3)
+
+[sub_resource type="BoxShape3D" id="shape_lintel"]
+size = Vector3(80, 34, 3)
+
+[sub_resource type="BoxShape3D" id="shape_goal"]
+size = Vector3(80, 36, 30)
+
+[sub_resource type="BoxShape3D" id="shape_goal_back"]
+size = Vector3(80, 36, 3)
+
+[sub_resource type="BoxShape3D" id="shape_goal_side"]
+size = Vector3(3, 36, 30)
+
+[sub_resource type="BoxShape3D" id="shape_goal_roof"]
+size = Vector3(80, 3, 30)
+
+[node name="Arena" type="StaticBody3D"]
+
+[node name="WallEast" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 35, 0)
+mesh = SubResource("mesh_side")
+
+[node name="WallEastShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 35, 0)
+shape = SubResource("shape_side")
+
+[node name="WallWest" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -120, 35, 0)
+mesh = SubResource("mesh_side")
+
+[node name="WallWestShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -120, 35, 0)
+shape = SubResource("shape_side")
+
+[node name="NorthPillarL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -80, 35, 200)
+mesh = SubResource("mesh_pillar")
+
+[node name="NorthPillarLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -80, 35, 200)
+shape = SubResource("shape_pillar")
+
+[node name="NorthPillarR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 35, 200)
+mesh = SubResource("mesh_pillar")
+
+[node name="NorthPillarRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 35, 200)
+shape = SubResource("shape_pillar")
+
+[node name="NorthLintel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 53, 200)
+mesh = SubResource("mesh_lintel")
+
+[node name="NorthLintelShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 53, 200)
+shape = SubResource("shape_lintel")
+
+[node name="SouthPillarL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -80, 35, -200)
+mesh = SubResource("mesh_pillar")
+
+[node name="SouthPillarLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -80, 35, -200)
+shape = SubResource("shape_pillar")
+
+[node name="SouthPillarR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 35, -200)
+mesh = SubResource("mesh_pillar")
+
+[node name="SouthPillarRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 35, -200)
+shape = SubResource("shape_pillar")
+
+[node name="SouthLintel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 53, -200)
+mesh = SubResource("mesh_lintel")
+
+[node name="SouthLintelShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 53, -200)
+shape = SubResource("shape_lintel")
+
+[node name="NorthGoalBack" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, 230)
+mesh = SubResource("mesh_goal_back")
+
+[node name="NorthGoalBackShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, 230)
+shape = SubResource("shape_goal_back")
+
+[node name="NorthGoalSideL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 18, 215)
+mesh = SubResource("mesh_goal_side")
+
+[node name="NorthGoalSideLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 18, 215)
+shape = SubResource("shape_goal_side")
+
+[node name="NorthGoalSideR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 18, 215)
+mesh = SubResource("mesh_goal_side")
+
+[node name="NorthGoalSideRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 18, 215)
+shape = SubResource("shape_goal_side")
+
+[node name="NorthGoalRoof" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36, 215)
+mesh = SubResource("mesh_goal_roof")
+
+[node name="NorthGoalRoofShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36, 215)
+shape = SubResource("shape_goal_roof")
+
+[node name="SouthGoalBack" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, -230)
+mesh = SubResource("mesh_goal_back")
+
+[node name="SouthGoalBackShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, -230)
+shape = SubResource("shape_goal_back")
+
+[node name="SouthGoalSideL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 18, -215)
+mesh = SubResource("mesh_goal_side")
+
+[node name="SouthGoalSideLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 18, -215)
+shape = SubResource("shape_goal_side")
+
+[node name="SouthGoalSideR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 18, -215)
+mesh = SubResource("mesh_goal_side")
+
+[node name="SouthGoalSideRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 18, -215)
+shape = SubResource("shape_goal_side")
+
+[node name="SouthGoalRoof" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36, -215)
+mesh = SubResource("mesh_goal_roof")
+
+[node name="SouthGoalRoofShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36, -215)
+shape = SubResource("shape_goal_roof")
+
+[node name="GoalNorth" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, 215)
+
+[node name="Mesh" type="MeshInstance3D" parent="GoalNorth"]
+mesh = SubResource("mesh_goal")
+surface_material_override/0 = SubResource("goal_blue_mat")
+
+[node name="Shape" type="CollisionShape3D" parent="GoalNorth"]
+shape = SubResource("shape_goal")
+
+[node name="GoalSouth" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, -215)
+
+[node name="Mesh" type="MeshInstance3D" parent="GoalSouth"]
+mesh = SubResource("mesh_goal")
+surface_material_override/0 = SubResource("goal_orange_mat")
+
+[node name="Shape" type="CollisionShape3D" parent="GoalSouth"]
+shape = SubResource("shape_goal")
