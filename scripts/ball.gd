@@ -6,14 +6,14 @@ class_name Ball
 ## reverted and collisions resolved manually with impulse math. Final motion is
 ## integrated by hand. See ../SumoSoccer/ball.gd.
 
-const G := 9.8
+const G := 7.0 # floatier than 9.8
 
 var mass := 30.0
 var radius := 2.0                  # filled from the collision shape in _ready
 
 const RESTITUTION := 0.6           # bounciness against the glider
 const GROUND_RESTITUTION := 0.6    # bounce off floor / static geometry
-const AIR_DRAG := 0.05             # fractional speed loss per second in air
+const AIR_DRAG := 0.08             # fractional speed loss per second in air
 const ROLL_FRICTION := 1.2         # horizontal decel (units/s) while on ground
 
 var last_position := Vector3.ZERO
