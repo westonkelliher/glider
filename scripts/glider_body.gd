@@ -178,6 +178,14 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_pressed("boost"):
 		pot_height += 30.0 * delta
 		velocity += nose_dir * 10.0 * delta
+
+	var slow := Input.get_action_strength("slow_down")
+	if slow > 0.0:
+		pot_height -= 45.0 * slow * delta
+		# don't subtract more forward speed than we have (no nose reversal)
+		var forward_speed := maxf(0.0, velocity.dot(nose_dir))
+		velocity -= nose_dir * minf(15.0 * slow * delta, forward_speed)
+		pot_height = maxf(pot_height, position.y)
 	
 	# keep from touching floor
 	if position.y < FLOOR_HEIGHT:
