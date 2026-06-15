@@ -31,6 +31,12 @@ var verbose := false
 
 var frame := 0
 var last_total := 0
+# Secondary metrics (frame counts) so low-scoring matches still rank.
+var blue_third := 0    # frames ball in blue's attacking third (z > 66)
+var orange_third := 0  # frames ball in orange's attacking third (z < -66)
+var blue_press := 0    # frames ball near blue goal mouth (z > 150 and |x| < 40)
+var orange_press := 0  # frames ball near orange goal mouth (z < -150 and |x| < 40)
+var sum_z := 0.0       # running sum of ball.z (signed possession bias)
 var rng := RandomNumberGenerator.new()
 var arena: Node
 var ball: Node3D
@@ -86,6 +92,17 @@ func _physics_process(_d: float) -> void:
 		print("[dbg] f=%d ball(%.0f,%.0f,%.0f) bv=%.1f | blue(%.0f,%.0f,%.0f) orange(%.0f,%.0f,%.0f)" % [
 			frame, b.x, b.y, b.z, ball.velocity.length(),
 			g0.x, g0.y, g0.z, g1.x, g1.y, g1.z])
+	var bz: float = ball.global_position.z
+	var bx: float = ball.global_position.x
+	sum_z += bz
+	if bz > 66.0:
+		blue_third += 1
+	elif bz < -66.0:
+		orange_third += 1
+	if bz > 150.0 and absf(bx) < 40.0:
+		blue_press += 1
+	elif bz < -150.0 and absf(bx) < 40.0:
+		orange_press += 1
 	var total: int = arena.score_blue + arena.score_orange
 	if total > last_total:
 		last_total = total
@@ -93,8 +110,9 @@ func _physics_process(_d: float) -> void:
 			print("[match] goal f=%d  blue=%d orange=%d" % [frame, arena.score_blue, arena.score_orange])
 		_kickoff()  # referee already reset to centre; override with randomness
 	if frame >= max_frames or total >= max_goals:
-		print("[match] TALLY blue_variant=%s orange_variant=%s blue=%d orange=%d frames=%d" % [
-			blue_variant, orange_variant, arena.score_blue, arena.score_orange, frame])
+		print("[match] TALLY blue_variant=%s orange_variant=%s blue=%d orange=%d frames=%d blue_third=%d orange_third=%d blue_press=%d orange_press=%d sum_z=%.0f" % [
+			blue_variant, orange_variant, arena.score_blue, arena.score_orange, frame,
+			blue_third, orange_third, blue_press, orange_press, sum_z])
 		get_tree().quit()
 
 
