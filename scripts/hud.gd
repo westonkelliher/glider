@@ -21,9 +21,10 @@ func _ready() -> void:
 	_pot_label.scroll_active = false
 	_pot_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_pot_label.position = Vector2(12, 8)
-	_pot_label.custom_minimum_size = Vector2(680, 0)
-	_pot_label.add_theme_font_size_override("normal_font_size", 18)
-	_pot_label.add_theme_font_size_override("bold_font_size", 18)
+	_pot_label.custom_minimum_size = Vector2(880, 0)
+	_pot_label.add_theme_font_size_override("normal_font_size", 22)
+	_pot_label.add_theme_font_size_override("bold_font_size", 22)
+	_pot_label.add_theme_stylebox_override("normal", _panel_bg())
 	add_child(_pot_label)
 
 	# Top-right, right-aligned so the fixed-decimal values stay pinned to the
@@ -36,6 +37,21 @@ func _ready() -> void:
 	_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_stats_label.add_theme_font_size_override("font_size", 18)
 	add_child(_stats_label)
+
+
+# Dark rounded panel behind the readout, with padding so text isn't flush.
+func _panel_bg() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0.55)
+	sb.corner_radius_top_left = 6
+	sb.corner_radius_top_right = 6
+	sb.corner_radius_bottom_left = 6
+	sb.corner_radius_bottom_right = 6
+	sb.content_margin_left = 12
+	sb.content_margin_right = 14
+	sb.content_margin_top = 8
+	sb.content_margin_bottom = 10
+	return sb
 
 
 func set_readout(pot_height: float, tuning_name: String, scheme_name: String) -> void:
