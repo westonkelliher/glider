@@ -9,4 +9,5 @@
 
 # Export output and local AI report scratch
 /build/
-/responses/
+/responses/tests/results.csv
+.claude/worktrees/
