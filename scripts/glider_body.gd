@@ -7,6 +7,7 @@ const Missile := preload("res://missile.tscn")
 
 const G := 9.8
 const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
+const FLOOR_HEIGHT := 0.5
 
 
 ## Flight tuning — TEST/PLAY presets, toggled live with T or the pause menu.
@@ -36,7 +37,7 @@ var air_friction := 1.0
 
 
 ## Collision mass (heavy — the ball reacts to us far more than we react to it).
-var mass := 800.0
+var mass := 180.0
 ## Accumulated external knock (e.g. from the ball), applied once per frame.
 var _external_impulse := Vector3.ZERO
 
@@ -135,7 +136,7 @@ func _physics_process(delta: float) -> void:
 	#
 	## speeds, directions and velocities from potential (pot) values
 	# pot values
-	if position.y > pot_height && position.y > 2.0:
+	if position.y > pot_height:
 		pot_height = position.y
 	var d_h := pot_height - position.y
 	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h ##########
@@ -177,8 +178,8 @@ func _physics_process(delta: float) -> void:
 		velocity += nose_dir * 10.0 * delta
 	
 	# keep from touching floor
-	if position.y < 1.0:
-		position.y = 1.0
+	if position.y < FLOOR_HEIGHT:
+		position.y = FLOOR_HEIGHT
 		# take away downward component of velocity
 		var down_of_v := Vector3.DOWN * Vector3.DOWN.dot(velocity)
 		velocity -= down_of_v
@@ -188,8 +189,12 @@ func _physics_process(delta: float) -> void:
 		#velocity += Vector3.DOWN * 0.05
 	#
 	# apply any external knock (e.g. ball impact) on top of the flight model
-	velocity += _external_impulse / mass
-	_external_impulse = Vector3.ZERO
+	if _external_impulse != Vector3.ZERO:
+		velocity += _external_impulse / mass
+		_external_impulse = Vector3.ZERO
+		# bake the new speed into pot_height (the source of truth for speed),
+		# else the flight model regenerates the old speed next frame.
+		pot_height = position.y + velocity.length_squared() / (2.0 * G)
 	#
 	set_stats(d_h, current_speed, pot_speed, new_speed, nose_dir, current_dir,
 		pot_speed_catchup, pot_dir_catchup)
