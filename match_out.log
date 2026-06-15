@@ -1,0 +1,25 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+[referee] ready, monitoring goals
+[match] start blue=base orange=base seed=1 frames=2400 goals=99 noise=1.50
+[dbg] f=120 ball(-6,9,2) bv=13.8 | blue(-6,28,-29) orange(-7,27,30)
+[dbg] f=240 ball(3,8,3) bv=4.7 | blue(8,1,9) orange(13,0,-8)
+[dbg] f=360 ball(10,4,3) bv=3.9 | blue(2,7,6) orange(-1,6,-3)
+[dbg] f=480 ball(17,3,4) bv=3.6 | blue(22,1,9) orange(18,2,16)
+[dbg] f=600 ball(25,6,2) bv=4.9 | blue(32,9,-2) orange(16,6,7)
+[dbg] f=720 ball(32,3,7) bv=4.4 | blue(34,2,-3) orange(20,3,-8)
+[dbg] f=840 ball(13,12,49) bv=24.3 | blue(17,12,41) orange(22,8,39)
+[dbg] f=960 ball(-6,5,90) bv=20.9 | blue(-7,1,77) orange(0,4,80)
+[dbg] f=1080 ball(-28,3,125) bv=27.4 | blue(-25,3,117) orange(-20,2,128)
+[dbg] f=1200 ball(-66,3,158) bv=21.8 | blue(-60,2,146) orange(-61,2,164)
+[dbg] f=1320 ball(-107,9,156) bv=21.1 | blue(-105,13,172) orange(-99,8,156)
+[dbg] f=1440 ball(-98,5,148) bv=11.1 | blue(-100,1,147) orange(-111,7,147)
+[dbg] f=1560 ball(-68,15,141) bv=14.5 | blue(-84,14,127) orange(-74,13,138)
+[dbg] f=1680 ball(-42,5,136) bv=13.2 | blue(-37,0,143) orange(-40,1,147)
+[dbg] f=1800 ball(-16,11,128) bv=13.1 | blue(-28,20,131) orange(-23,13,130)
+[dbg] f=1920 ball(7,5,120) bv=11.1 | blue(11,5,129) orange(-1,1,108)
+[dbg] f=2040 ball(26,3,114) bv=9.5 | blue(12,23,122) orange(18,1,117)
+[dbg] f=2160 ball(37,8,107) bv=8.6 | blue(47,1,115) orange(34,3,97)
+[dbg] f=2280 ball(52,13,77) bv=28.5 | blue(45,12,84) orange(47,8,102)
+[dbg] f=2400 ball(80,5,32) bv=24.6 | blue(74,5,40) orange(75,4,46)
+[match] TALLY blue_variant=base orange_variant=base blue=0 orange=0 frames=2400

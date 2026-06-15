@@ -50,6 +50,10 @@ var _hud: CanvasLayer
 
 ## Controls.
 @export var is_ai := false
+## Which AI brain to load: scripts/ai_variants/ai_<ai_variant>.gd (AI only).
+@export var ai_variant := "base"
+## World point this glider attacks. Default = BLUE goal (north, +Z).
+@export var target_goal := Vector3(0.0, 15.0, 205.0)
 var control_scheme := GliderInput.Scheme.RL
 var _menu: CanvasLayer
 var controller: RefCounted
@@ -60,13 +64,30 @@ func _ready() -> void:
 	tuning = _tunings[_tuning_idx]
 	_spawn_transform = global_transform
 	add_to_group("glider")
-	controller = AiController.new() if is_ai else HumanController.new()
-	if not is_ai:
+	if is_ai:
+		controller = _make_ai_controller()
+	else:
+		controller = HumanController.new()
 		_hud = HUD.new()
 		add_child(_hud)
 		_menu = PauseMenu.new()
 		_menu.glider = self
 		add_child(_menu)
+
+
+## Load the AI brain named by `ai_variant`, falling back to the base striker if
+## the file is missing or fails to compile (so one broken variant can't crash a
+## whole tournament).
+func _make_ai_controller() -> RefCounted:
+	var path := "res://scripts/ai_variants/ai_%s.gd" % ai_variant
+	if ResourceLoader.exists(path):
+		var res: Resource = load(path)
+		if res != null:
+			var c: RefCounted = res.new()
+			if c != null:
+				return c
+		push_warning("AI variant '%s' failed to load; using base." % ai_variant)
+	return AiBase.new()
 
 
 ## --- Tuning / control toggles (also driven by the pause menu) ------------
