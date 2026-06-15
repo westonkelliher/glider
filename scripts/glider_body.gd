@@ -180,11 +180,15 @@ func _physics_process(delta: float) -> void:
 		velocity += nose_dir * 10.0 * delta
 
 	var slow := Input.get_action_strength("slow_down")
-	if slow > 0.0:
+	if slow > 0.0 and current_speed > 1.0:
+		# flat component
 		pot_height -= 45.0 * slow * delta
-		# don't subtract more forward speed than we have (no nose reversal)
 		var forward_speed := maxf(0.0, velocity.dot(nose_dir))
 		velocity -= nose_dir * minf(15.0 * slow * delta, forward_speed)
+		# fractional component: lose 50%/s of speed (speed scales as sqrt(d_h))
+		var speed_factor := maxf(0.0, 1.0 - 0.5 * slow * delta)
+		pot_height = position.y + (pot_height - position.y) * speed_factor * speed_factor
+		velocity *= speed_factor
 		pot_height = maxf(pot_height, position.y)
 	
 	# keep from touching floor
