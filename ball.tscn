@@ -1,6 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://b0ballglider01"]
+[gd_scene format=3 uid="uid://bb5jqlspvdnnk"]
 
-[ext_resource type="Script" path="res://scripts/ball.gd" id="1_ball"]
+[ext_resource type="Script" uid="uid://bjnwg4baue767" path="res://scripts/ball.gd" id="1_ball"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ball"]
 albedo_color = Color(0.95, 0.45, 0.1, 1)
@@ -15,13 +15,12 @@ height = 4.0
 [sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
 radius = 2.0
 
-[node name="Ball" type="CharacterBody3D"]
+[node name="Ball" type="CharacterBody3D" unique_id=1527979532]
 collision_layer = 2
-collision_mask = 1
 script = ExtResource("1_ball")
 
-[node name="Mesh" type="MeshInstance3D" parent="."]
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1511962299]
 mesh = SubResource("SphereMesh_ball")
 
-[node name="Shape" type="CollisionShape3D" parent="."]
+[node name="Shape" type="CollisionShape3D" parent="." unique_id=1384734472]
 shape = SubResource("SphereShape3D_ball")
