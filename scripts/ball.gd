@@ -25,6 +25,7 @@ func _ready() -> void:
 	var shape: Shape3D = $Shape.shape
 	if shape is SphereShape3D:
 		radius = shape.radius * scale.x
+	velocity = Vector3.UP * 24.0
 
 
 func _physics_process(delta: float) -> void:
