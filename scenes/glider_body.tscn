@@ -64,14 +64,14 @@ script = ExtResource("1_kiolu")
 transform = Transform3D(1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0.1, -0.1)
 
 [node name="TrailL" type="GPUParticles3D" parent="Mesh" unique_id=465931524]
-transform = Transform3D(0.70710677, 0, 0.70710677, 0, 0.99999994, 0, -0.7071067, 0, 0.7071067, 0, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, 0.55)
 amount = 240
 lifetime = 0.8
 process_material = SubResource("ParticleProcessMaterial_trail")
 draw_pass_1 = SubResource("QuadMesh_trail")
 
 [node name="TrailR" type="GPUParticles3D" parent="Mesh" unique_id=118740851]
-transform = Transform3D(0.70710677, 0, 0.70710677, 0, 0.99999994, 0, -0.7071067, 0, 0.7071067, 0, 0, 0)
+transform = Transform3D(0.7071068, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.7071068, 0.8, 0, 0.55)
 amount = 240
 lifetime = 0.8
 process_material = SubResource("ParticleProcessMaterial_trail")
