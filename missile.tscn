@@ -23,6 +23,8 @@ radius = 0.14
 height = 0.4
 
 [node name="Missile" type="CharacterBody3D" unique_id=584507955]
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_0uoyr")
 
 [node name="Shape" type="CollisionShape3D" parent="." unique_id=897160776]
