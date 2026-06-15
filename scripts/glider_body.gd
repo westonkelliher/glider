@@ -163,7 +163,7 @@ func _physics_process(delta: float) -> void:
 	#
 	## air brake — held brake kills friction so the craft drifts on its momentum.
 	if ctl.braked:
-		air_friction = 0.05
+		air_friction = 0.11
 		pull_in_wings(true)
 	else:
 		air_friction = move_toward(air_friction, 1.0, 200.0 * delta)
@@ -199,11 +199,11 @@ func _physics_process(delta: float) -> void:
 	pot_speed = min(pot_speed, MAX_SPEED) # max speed
 	#
 	# new values
-	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
+	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(current_speed)
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
 	var dir_offset := nose_dir.angle_to(current_dir)
 	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
-	var pot_dir_catchup := 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45)
+	var pot_dir_catchup := 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45 + 0.2)
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
 	var new_velocity := new_speed * new_dir + Vector3.UP*0.01
 	#
@@ -229,11 +229,11 @@ func _physics_process(delta: float) -> void:
 	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
 	
 	if ctl.boost:
-		pot_height += 30.0 * delta
-		velocity += nose_dir * 10.0 * delta
+		#pot_height += nose_dir.dot(current_dir) * 15.0 * delta
+		velocity += nose_dir * 50.0 * delta
 
 	var slow := ctl.slow
-	if slow > 0.0 and current_speed > 1.0:
+	if slow > 0.0 and current_speed > 4.0:
 		# flat component
 		pot_height -= 45.0 * slow * delta
 		var forward_speed := maxf(0.0, velocity.dot(nose_dir))

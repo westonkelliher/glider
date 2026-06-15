@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://bjnwg4baue767" path="res://scripts/ball.gd" id="1_ball"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ball"]
-albedo_color = Color(0.95, 0.45, 0.1, 1)
+albedo_color = Color(0.78690004, 0.6624569, 0.8694742, 1)
 metallic = 0.2
 roughness = 0.5
 

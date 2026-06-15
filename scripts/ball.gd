@@ -13,7 +13,7 @@ var radius := 2.0                  # filled from the collision shape in _ready
 
 const RESTITUTION := 0.6           # bounciness against the glider
 const GROUND_RESTITUTION := 0.6    # bounce off floor / static geometry
-const AIR_DRAG := 0.08             # fractional speed loss per second in air
+const AIR_DRAG := 0.11             # fractional speed loss per second in air
 const ROLL_FRICTION := 1.2         # horizontal decel (units/s) while on ground
 
 var last_position := Vector3.ZERO
