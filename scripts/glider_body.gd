@@ -1,7 +1,9 @@
 extends CharacterBody3D
+class_name Glider
 
 const HUD := preload("res://scripts/hud.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
+const Missile := preload("res://missile.tscn")
 
 const G := 9.8
 const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
@@ -31,6 +33,12 @@ var yaw_v := 0.0
 
 ## Air-brake friction: drops while braked, eases back to 1.0 otherwise.
 var air_friction := 1.0
+
+
+## Collision mass (heavy — the ball reacts to us far more than we react to it).
+var mass := 800.0
+## Accumulated external knock (e.g. from the ball), applied once per frame.
+var _external_impulse := Vector3.ZERO
 
 
 ## Pot height (stored potential energy as an equivalent altitude).
@@ -77,9 +85,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("toggle_scheme"):
 		toggle_control()
 		_menu.refresh_labels()
-	if Input.action_press("launch"):
-		# launch missile
-		
+	if event.is_action_pressed("launch"):
+		launch_missile()
+
+
+func launch_missile() -> void:
+	var missile := Missile.instantiate()
+	get_parent().add_child(missile)
+	missile.global_position = global_position
+	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
+	var speed := velocity.length()
+	var vel_dir := velocity.normalized()
+	missile.launch(0.6 * speed * vel_dir + 0.6 * speed * nose_dir)
 
 
 func _physics_process(delta: float) -> void:
@@ -170,12 +187,20 @@ func _physics_process(delta: float) -> void:
 	#if velocity.length() < 0.1:
 		#velocity += Vector3.DOWN * 0.05
 	#
+	# apply any external knock (e.g. ball impact) on top of the flight model
+	velocity += _external_impulse / mass
+	_external_impulse = Vector3.ZERO
+	#
 	set_stats(d_h, current_speed, pot_speed, new_speed, nose_dir, current_dir,
 		pot_speed_catchup, pot_dir_catchup)
 	#
 	#velocity = Vector3.ZERO# TODONOW uncomment
 	#rotation = Vector3.ZERO# TODONOW uncomment
 	move_and_slide()
+
+
+func apply_impulse(impulse: Vector3) -> void:
+	_external_impulse += impulse
 
 
 var p_is_start := true
