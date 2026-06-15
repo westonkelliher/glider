@@ -56,12 +56,12 @@ points = PackedVector3Array(-0.8, 0.12, 0.45, -0.8, 0, 0.45, 0.8, 0.12, 0.45, 0.
 [sub_resource type="BoxMesh" id="BoxMesh_qut1m"]
 
 [node name="GliderBody" type="CharacterBody3D" unique_id=786574907]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 0, 0, 0)
 floor_max_angle = 0.43284166
 script = ExtResource("1_kiolu")
 
 [node name="Mesh" type="MeshInstance3D" parent="." unique_id=8097921]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -0.1)
+transform = Transform3D(1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0.1, -0.1)
 
 [node name="TrailL" type="GPUParticles3D" parent="Mesh" unique_id=465931524]
 transform = Transform3D(0.70710677, 0, 0.70710677, 0, 0.99999994, 0, -0.7071067, 0, 0.7071067, 0, 0, 0)
@@ -97,7 +97,7 @@ transform = Transform3D(-0.5000002, -2.8383162e-08, -2.5376527e-15, 0, -2.185569
 mesh = SubResource("PrismMesh_3gpux")
 
 [node name="Shape" type="CollisionShape3D" parent="." unique_id=1877100831]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.050000004, 0)
+transform = Transform3D(1, 0, 0, 0, 2, 0, 0, 0, 1, 0, -0.013245535, 0)
 shape = SubResource("ConvexPolygonShape3D_260ag")
 
 [node name="Ailerons" type="Node3D" parent="." unique_id=1488725268]

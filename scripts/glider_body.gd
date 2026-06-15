@@ -8,11 +8,12 @@ const Missile := preload("res://missile.tscn")
 const G := 9.8
 const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
 const FLOOR_HEIGHT := 0.5
+const MAX_SPEED := 35.0
 
 
 ## Flight tuning — TEST/PLAY presets, toggled live with T or the pause menu.
 var _tunings := [FlightTuning.test(), FlightTuning.play()]
-var _tuning_idx := 1
+var _tuning_idx := 0
 var tuning: FlightTuning
 
 
@@ -37,7 +38,7 @@ var air_friction := 1.0
 
 
 ## Collision mass (heavy — the ball reacts to us far more than we react to it).
-var mass := 180.0
+var mass := 160.0
 ## Accumulated external knock (e.g. from the ball), applied once per frame.
 var _external_impulse := Vector3.ZERO
 
@@ -123,10 +124,11 @@ func _physics_process(delta: float) -> void:
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
 	#var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
-	var drag_factor := 1 - absf(nose_dot)
-	var rrate := 0.2 + 0.15 * sqrt(velocity.length()) #* nose_dot
+	var drag_factor := (1 - absf(nose_dot))*air_friction
+	var rrate := 0.5 + 0.1 * sqrt(velocity.length()) #* nose_dot
 	if GliderInput.read_braked():
-		rrate = 0.8 + 0.1 * sqrt(velocity.length()) #* nose_dot
+		rrate = 0.8 + 0.06 * sqrt(velocity.length()) #* nose_dot
+	#rrate = 1.0
 	#
 	## adjust rotation
 	rotate_object_local(Vector3.RIGHT, rrate * ail_pitch * tuning.PITCH_MULT * delta) # pitch
@@ -140,7 +142,7 @@ func _physics_process(delta: float) -> void:
 		pot_height = position.y
 	var d_h := pot_height - position.y
 	var pot_speed := sqrt(d_h*G*2) # solved for speed in terms of d_h ##########
-	pot_speed = min(pot_speed, 30.0) # max speed
+	pot_speed = min(pot_speed, MAX_SPEED) # max speed
 	#
 	# new values
 	var pot_speed_catchup := 1.0+tuning.POT_SPEED_CATCHUP_MULT*(0.1+current_speed)
