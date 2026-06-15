@@ -3,23 +3,27 @@ extends CanvasLayer
 ## of these and pushes values to it each physics frame. Top-left = pot/mode/binds
 ## (set_readout); top-right = labeled debug stats (set_stats).
 
-const BINDS := "[binds]\n" \
-	+ "pitch/roll: W A S D\n" \
-	+ "yaw (pilot): Q E / LB RB\n" \
-	+ "air roll (RL): Shift / LB\n" \
-	+ "camera: right stick\n" \
-	+ "tuning TEST/PLAY: T / Back\n" \
-	+ "scheme RL/PILOT: C / Start\n" \
-	+ "pause: Esc"
+# Controller-first; keyboard/mouse is the dimmed secondary line.
+const BINDS := "[color=aqua][b]Fly[/b][/color]     L-stick pitch + turn · [color=yellow]LB[/color] air-roll (RL) · LB/RB yaw (Pilot)\n" \
+	+ "[color=orange][b]Power[/b][/color]   A launch · B boost · X brake\n" \
+	+ "[color=lime][b]Camera[/b][/color]  R-stick aim · R3 free · Y ball / velocity\n" \
+	+ "[color=violet][b]Modes[/b][/color]   Back tuning · Start scheme\n" \
+	+ "[color=#888888]K&M  WASD + Q/E · Shift air-roll · Space/RMB/LMB · mouse aim · F/Y · T/C · Esc[/color]"
 
-var _pot_label: Label
+var _pot_label: RichTextLabel
 var _stats_label: Label
 
 
 func _ready() -> void:
-	_pot_label = Label.new()
+	_pot_label = RichTextLabel.new()
+	_pot_label.bbcode_enabled = true
+	_pot_label.fit_content = true
+	_pot_label.scroll_active = false
+	_pot_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_pot_label.position = Vector2(12, 8)
-	_pot_label.add_theme_font_size_override("font_size", 22)
+	_pot_label.custom_minimum_size = Vector2(680, 0)
+	_pot_label.add_theme_font_size_override("normal_font_size", 18)
+	_pot_label.add_theme_font_size_override("bold_font_size", 18)
 	add_child(_pot_label)
 
 	# Top-right, right-aligned so the fixed-decimal values stay pinned to the
@@ -35,7 +39,7 @@ func _ready() -> void:
 
 
 func set_readout(pot_height: float, tuning_name: String, scheme_name: String) -> void:
-	_pot_label.text = "pot height: %.1f m\ntuning: %s\nscheme: %s\n\n%s" \
+	_pot_label.text = "[b]pot height:[/b] %.1f m   [b]tuning:[/b] %s   [b]scheme:[/b] %s\n\n%s" \
 		% [pot_height, tuning_name, scheme_name, BINDS]
 
 
