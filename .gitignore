@@ -12,3 +12,8 @@
 /responses/tests/results.csv
 .claude/worktrees/
 tests/tournament.log
+
+# GA training scratch
+.ga/tmp/
+.ga/*.log
+.ga/probe.json

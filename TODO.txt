@@ -1,0 +1,18 @@
+* remake glider mesh and hitboxes without weird scaling and sub-treeing
+  * and thicker glider
+* left triggers applies a reverse force
+* handle any glider collisions with custom collision handling logic similar to
+  ball
+* redo all the physics in terms of forces (still custom physics handling)
+* two different things to try:
+  * 1:
+    * right trigger applies forward force up to 22m/s speed
+    * boost applies force up to 38m/s speed but is limited (ragain over time or pickups)
+  * 2:
+    * while grounded you can "drive" to gain speed up to 38m/s
+    * no boosting
+* orient correctly when on the ground
+* make wipe outs possible against ground (if you tip your nose it flips you over etc)
+  * but still fairly easy to land on "wheels"/landing gear / belly
+* visual effect for boost
+* add cieling
