@@ -60,10 +60,17 @@ var controller: RefCounted
 var _spawn_transform: Transform3D
 
 
+## Team tint — players fly blue, the AI flies orange (matching the goals).
+## Slightly deep/desaturated so the metal sheen reads instead of glowing flat.
+const PLAYER_COLOR := Color(0.12, 0.32, 0.78)
+const AI_COLOR := Color(0.85, 0.38, 0.08)
+
+
 func _ready() -> void:
 	tuning = _tunings[_tuning_idx]
 	_spawn_transform = global_transform
 	add_to_group("glider")
+	_apply_team_color(AI_COLOR if is_ai else PLAYER_COLOR)
 	if is_ai:
 		controller = _make_ai_controller()
 	else:
@@ -73,6 +80,22 @@ func _ready() -> void:
 		_menu = PauseMenu.new()
 		_menu.glider = self
 		add_child(_menu)
+
+
+## Paint the body in the team color with a Rocket-League-ish metallic finish.
+## Each mesh keeps its original relative brightness (wings stay light, fins/
+## accents stay dark) so the craft reads as shaded paint, not one flat slab.
+## Overrides leave the shared wingmat/material resources untouched.
+func _apply_team_color(color: Color) -> void:
+	for mesh in $Mesh.find_children("*", "MeshInstance3D", true, false):
+		var src := mesh.get_active_material(0) as StandardMaterial3D
+		var shade := clampf((src.albedo_color.v if src else 0.6) * 1.35, 0.35, 1.0)
+		var m := StandardMaterial3D.new()
+		m.albedo_color = color * Color(shade, shade, shade)
+		m.metallic = 0.55
+		m.metallic_specular = 0.65
+		m.roughness = 0.32
+		mesh.material_override = m
 
 
 ## Load the AI brain named by `ai_variant`, falling back to the base striker if
