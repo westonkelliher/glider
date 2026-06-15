@@ -11,3 +11,4 @@
 /build/
 /responses/tests/results.csv
 .claude/worktrees/
+tests/tournament.log
