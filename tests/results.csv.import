@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cth80bt417str"
+
+[deps]
+
+files=["res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.frames.translation", "res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.sum.translation"]
+
+source_file="res://tests/results.csv"
+dest_files=["res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.frames.translation", "res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.blue.translation", "res://tests/results.orange.translation", "res://tests/results.sum.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
