@@ -11,8 +11,8 @@ const FLOOR_HEIGHT := 0.5
 const MAX_SPEED := 35.0
 
 
-## Flight tuning — TEST/PLAY presets, toggled live with T or the pause menu.
-var _tunings := [FlightTuning.test(), FlightTuning.play()]
+## Flight tuning — PRIMARY/SECONDARY presets, toggled live with T or the pause menu.
+var _tunings := [FlightTuning.primary(), FlightTuning.secondary()]
 var _tuning_idx := 0
 var tuning: FlightTuning
 
@@ -132,7 +132,7 @@ func menu_labels() -> Dictionary:
 func _unhandled_input(event: InputEvent) -> void:
 	if is_ai:
 		return
-	# T / Back toggles TEST <-> PLAY tuning live.
+	# T / Back toggles PRIMARY <-> SECONDARY tuning live.
 	if event.is_action_pressed("toggle_tuning"):
 		toggle_tuning()
 		_menu.refresh_labels()

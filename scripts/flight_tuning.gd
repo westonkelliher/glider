@@ -1,10 +1,10 @@
 class_name FlightTuning
 extends Resource
-## A named set of flight-feel constants. TEST = gentle accelerations (forces easy
-## to see), PLAY = snappy. Exported so presets can be authored as .tres in the
-## inspector; the static factories below are the in-code defaults.
+## A named set of flight-feel constants. PRIMARY = gentle accelerations (forces
+## easy to see), SECONDARY = snappy. Exported so presets can be authored as .tres
+## in the inspector; the static factories below are the in-code defaults.
 
-@export var DISPLAY_NAME := "TEST"
+@export var DISPLAY_NAME := "PRIMARY"
 
 ## Ailerons — how fast a surface eases toward target (1/s) and craft turn
 ## authority per unit of deflection.
@@ -14,28 +14,28 @@ extends Resource
 @export var AIL_YAW_SPEED := 4.0
 # aileron acc
 @export var AIL_ACC := 1.0 # dont go to 0 even though we interp
-@export var AIL_DAMP_ZONES_SIZE := 0.6 # as a fraction of total aileron range (for each zone)
+@export var AIL_DAMP_ZONES_SIZE := 0.7 # as a fraction of total aileron range (for each zone)
 # max rotation speeds
 @export var PITCH_MULT := 3.5
 @export var ROLL_MULT := 4.0
 @export var YAW_MULT := 3.0
 
 ## Pot-height energy model.
-@export var POT_SPEED_CATCHUP_MULT := 1.1
-@export var POT_DIR_CATCHUP_MULT := 0.18
-@export var DRAG := 0.3
+@export var POT_SPEED_CATCHUP_MULT := 1.5
+@export var POT_DIR_CATCHUP_MULT := 0.2
+@export var DRAG := 0.25
 
 #
 @export var NOSE_PULL_MULT := 2.0
 
 
-static func test() -> FlightTuning:
-	return FlightTuning.new() # defaults above are the TEST preset
+static func primary() -> FlightTuning:
+	return FlightTuning.new() # defaults above are the PRIMARY preset
 
 
-static func play() -> FlightTuning:
+static func secondary() -> FlightTuning:
 	var t := FlightTuning.new()
-	t.DISPLAY_NAME = "PLAY"
+	t.DISPLAY_NAME = "SECONDARY"
 	# aileron speeds
 	t.AIL_PITCH_SPEED = 8.0
 	t.AIL_ROLL_SPEED = 7.0
