@@ -6,3 +6,7 @@
 *.translation
 .DS_Store
 *.uid
+
+# Export output and local AI report scratch
+/build/
+/responses/
