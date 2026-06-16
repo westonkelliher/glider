@@ -15,10 +15,10 @@ class_name MatchController
 ## |z|<=28). Facing per side is preserved from each glider's scene transform.
 const KICKOFF_SPAWNS: Array[Vector2] = [
 	Vector2(0.0, 28.0),     # back-center
-	Vector2(7.0, 22.0),     # back-right diagonal
-	Vector2(-7.0, 22.0),    # back-left diagonal
-	Vector2(10.5, 14.0),    # right corner
-	Vector2(-10.5, 14.0),   # left corner
+	Vector2(7.0, 25.0),     # back-right diagonal
+	Vector2(-7.0, 25.0),    # back-left diagonal
+	Vector2(10.5, 21.0),    # right corner
+	Vector2(-10.5, 21.0),   # left corner
 ]
 
 var _label: Label = null

@@ -14,9 +14,10 @@ const MAX_SPEED := 35.0
 const BOOST_MAX := 100.0
 const BOOST_DRAIN := 45.0          # units/sec while boosting (~2.2s of full tank)
 const BOOST_RECHARGE := 22.0       # units/sec once recharging
-const BOOST_RECHARGE_DELAY := 8.0  # sec of no boosting before the tank refills
+const BOOST_RECHARGE_DELAY := 5.0  # sec of no boosting before the tank refills
 const BOOST_FORCE := 50.0           # nose-ward accel while boosting (player)
-const AI_BOOST_FORCE := 34.0        # softer accel for the AI (see AI boost below)
+const AI_BOOST_FORCE := 35.0        # 70% of player BOOST_FORCE (see AI boost below)
+const AI_FX_SCALE := 0.55           # AI boost FX (particle count/size, glow) vs player
 
 
 ## Flight tuning — PRIMARY/SECONDARY presets, toggled live with T or the pause menu.
@@ -117,9 +118,12 @@ func _ready() -> void:
 ## the craft. Toggled on/off by `emitting` each frame while boosting.
 func _make_boost_fx() -> CPUParticles3D:
 	var fx := CPUParticles3D.new()
+	# The AI's exhaust is dialed down so the player's boost reads as the stronger,
+	# flashier one (fewer, smaller particles and a dimmer glow; see _physics_process).
+	var fx_scale := AI_FX_SCALE if is_ai else 1.0
 	fx.emitting = false
 	fx.local_coords = false
-	fx.amount = 140
+	fx.amount = int(140 * fx_scale)
 	fx.lifetime = 0.5
 	fx.position = Vector3(0.0, 0.05, 0.7)
 	# Seed the jet from a small disc across the exhaust so it reads as a column,
@@ -134,8 +138,8 @@ func _make_boost_fx() -> CPUParticles3D:
 	# A touch of drag so the tail decelerates and bunches into a soft smoke puff.
 	fx.damping_min = 6.0
 	fx.damping_max = 10.0
-	fx.scale_amount_min = 0.6
-	fx.scale_amount_max = 1.1
+	fx.scale_amount_min = 0.6 * fx_scale
+	fx.scale_amount_max = 1.1 * fx_scale
 	# Grow slightly off the nozzle, then taper to nothing as it cools.
 	var taper := Curve.new()
 	taper.add_point(Vector2(0.0, 0.55))
@@ -340,7 +344,8 @@ func _physics_process(delta: float) -> void:
 		_boost_fx.emitting = boosting
 	if _boost_light:
 		# Flicker the glow a little so the exhaust feels alive while boosting.
-		var target := (2.4 + 0.5 * sin(_boost_idle * 60.0)) if boosting else 0.0
+		var fx_scale := AI_FX_SCALE if is_ai else 1.0
+		var target := ((2.4 + 0.5 * sin(_boost_idle * 60.0)) * fx_scale) if boosting else 0.0
 		_boost_light.light_energy = lerpf(_boost_light.light_energy, target, minf(1.0, delta * 18.0))
 
 	var slow := ctl.slow

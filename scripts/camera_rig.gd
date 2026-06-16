@@ -6,7 +6,7 @@ extends Node3D
 @export var max_pitch: float = 1.4
 @export var rotate_lerp: float = 5.0  # how fast ball/velocity cams swing to aim
 @export var floor_clearance: float = 1.5  # keep the rig this far above the floor (y=0)
-@export var look_tilt_max: float = 0.55   # max right-stick tilt (rad) in follow cams
+@export var look_tilt_max: float = 0.25   # max right-stick tilt (rad) in follow cams
 @export var look_tilt_lerp: float = 8.0   # how fast the tilt eases in/out
 
 @export var target: Node3D

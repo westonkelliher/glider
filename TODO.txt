@@ -27,7 +27,7 @@
 * [DONE] main menu to select between vs AI or tutorials
 * [DONE] limit boost to a certain amount with UI for boost available. after not boosting for 5s it starts recharging
 * [DONE] make tuning and mode (rl vs pilot) UI buttons, and make start pause and back button reset
-* change boost timer to 5s instead of 8s
+* [DONE] change boost timer to 5s instead of 8s
 * [DONE] give AI unlimited but softer boost. it's hard to train the AI on boost management
 * [DONE] make it so camera is on an arm that "collides" with the floor so we dont clip the camera under the floor
 * [DONE] in ball cam and velocity cam, allow right stick to tilt the camera (rocket league does this)
@@ -58,8 +58,8 @@
 * [DONE] stage select in tutorial pause menu
 * 2v2 mode
 * [DONE] fix no boost after goal bug
-* the stick tilt in ball cam and velocity cam is fucking insane. tone it down
-* new kickoffs are too close to the ball
-* reduce AI's boost visual effect compared to player
+* [DONE] the stick tilt in ball cam and velocity cam is fucking insane. tone it down
+* [DONE] new kickoffs are too close to the ball
+* [DONE] reduce AI's boost visual effect compared to player
 * AI's boost force should be 70% as effective as player's
 * while touching ground, right trigger speeds player up (up to 14m/s)
