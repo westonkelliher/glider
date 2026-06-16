@@ -7,7 +7,7 @@ const PauseMenu := preload("res://scripts/pause_menu.gd")
 const G := 9.8
 const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
 const FLOOR_HEIGHT := 0.5
-const GROUND_DRIVE_SPEED := 14.0   # max ground speed (m/s) the throttle can build
+const GROUND_DRIVE_SPEED := 20.0   # max ground speed (m/s) the throttle can build
 const GROUND_DRIVE_ACCEL := 18.0   # m/s^2 ground accel at full throttle
 const MAX_SPEED := 35.0
 
@@ -15,8 +15,8 @@ const MAX_SPEED := 35.0
 ## after a short idle, so boost is a resource to manage rather than spam.
 const BOOST_MAX := 100.0
 const BOOST_DRAIN := 45.0          # units/sec while boosting (~2.2s of full tank)
-const BOOST_RECHARGE := 22.0       # units/sec once recharging
-const BOOST_RECHARGE_DELAY := 3.5  # sec of no boosting before the tank refills
+const BOOST_RECHARGE := 33.0       # units/sec once recharging
+const BOOST_RECHARGE_DELAY := 2.0  # sec of no boosting before the tank refills
 const BOOST_FORCE := 50.0           # nose-ward accel while boosting (player)
 const AI_BOOST_FORCE := 35.0        # 70% of player BOOST_FORCE (see AI boost below)
 const AI_FX_SCALE := 0.55           # AI boost FX (particle count/size, glow) vs player
@@ -354,7 +354,7 @@ func _physics_process(delta: float) -> void:
 	# craft along its flattened nose direction up to a modest ground speed, so you
 	# can build a run-up before lifting off. The energy model (pot_height) tracks
 	# the gained speed on the following frame, same as boost.
-	if position.y <= FLOOR_HEIGHT + 0.05 and ctl.throttle > 0.0:
+	if position.y <= FLOOR_HEIGHT + 1.5 and ctl.throttle > 0.0:
 		var ground_nose := Vector3(nose_dir.x, 0.0, nose_dir.z)
 		if ground_nose.length() > 0.01:
 			ground_nose = ground_nose.normalized()
