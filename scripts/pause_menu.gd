@@ -46,30 +46,32 @@ func _build() -> void:
 	_root.add_child(center)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 16)
 	center.add_child(vbox)
 
 	var title := Label.new()
-	title.text = "Paused"
-	title.add_theme_font_size_override("font_size", 32)
+	title.text = "PAUSED"
+	title.add_theme_font_size_override("font_size", 64)
+	title.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
-	_tuning_btn = Button.new()
+	_tuning_btn = _make_button("")
 	_tuning_btn.pressed.connect(_on_tuning_pressed)
 	vbox.add_child(_tuning_btn)
 
-	_control_btn = Button.new()
+	_control_btn = _make_button("")
 	_control_btn.pressed.connect(_on_control_pressed)
 	vbox.add_child(_control_btn)
 
 	# Tutorial-only stage jump buttons (filled in on first open if applicable).
 	_stage_box = VBoxContainer.new()
+	_stage_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	_stage_box.add_theme_constant_override("separation", 6)
 	vbox.add_child(_stage_box)
 
-	var resume := Button.new()
-	resume.text = "Resume"
+	var resume := _make_button("Resume")
 	resume.pressed.connect(close)
 	vbox.add_child(resume)
 
@@ -86,6 +88,15 @@ func _build() -> void:
 	vbox.add_child(binds)
 
 	refresh_labels()
+
+
+# Big menu button, matching the title-screen look.
+func _make_button(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(360.0, 56.0)
+	b.add_theme_font_size_override("font_size", 28)
+	return b
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -105,6 +116,7 @@ func open() -> void:
 	_root.visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_tuning_btn.grab_focus()  # so gamepad / keyboard can navigate immediately
 
 
 # Build a "Jump to stage" list the first time we open inside a tutorial. A plain
@@ -117,14 +129,17 @@ func _ensure_stage_select() -> void:
 		return
 	_stages_built = true
 	var header := Label.new()
-	header.text = "— Jump to stage —"
+	header.text = "Jump to stage"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	header.add_theme_font_size_override("font_size", 20)
+	header.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
 	_stage_box.add_child(header)
 	var titles: Array = mgr.stage_titles()
 	for i in titles.size():
 		var b := Button.new()
 		b.text = "%d. %s" % [i + 1, titles[i]]
+		b.custom_minimum_size = Vector2(360.0, 38.0)
+		b.add_theme_font_size_override("font_size", 18)
 		b.pressed.connect(_on_stage_pressed.bind(i))
 		_stage_box.add_child(b)
 
