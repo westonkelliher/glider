@@ -3,26 +3,67 @@ extends CanvasLayer
 ## of these and pushes values to it each physics frame. Top-center = scoreboard
 ## (set_score); bottom-center = boost gauge. Controls live in the pause menu.
 
-var _score_label: Label
+const BLUE := Color(0.16, 0.45, 0.95)
+const ORANGE := Color(1.0, 0.5, 0.12)
+
+var _blue_score: Label
+var _orange_score: Label
 var _boost_bar: ProgressBar
 var _boost_caption: Label
 
 
 func _ready() -> void:
-	# Scoreboard, top-center.
-	_score_label = Label.new()
-	_score_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_score_label.offset_left = -200.0
-	_score_label.offset_right = 200.0
-	_score_label.offset_top = 12.0
-	_score_label.offset_bottom = 52.0
-	_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_score_label.add_theme_font_size_override("font_size", 28)
-	_score_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	_score_label.add_theme_constant_override("outline_size", 8)
-	_score_label.add_theme_stylebox_override("normal", _panel_bg())
-	add_child(_score_label)
+	# Scoreboard, top-center: two angled team boxes meeting at the middle,
+	# blue on the left and orange on the right (Rocket League style).
+	_blue_score = _make_score_box(BLUE, true)
+	_blue_score.offset_left = -82.0
+	_blue_score.offset_right = -1.0
+	add_child(_blue_score)
+
+	_orange_score = _make_score_box(ORANGE, false)
+	_orange_score.offset_left = 1.0
+	_orange_score.offset_right = 82.0
+	add_child(_orange_score)
+
 	set_score(0, 0)
+
+
+# One team's score box: a saturated team-colored panel with a big white number.
+func _make_score_box(team: Color, left_side: bool) -> Label:
+	var lbl := Label.new()
+	lbl.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	lbl.offset_top = 12.0
+	lbl.offset_bottom = 60.0
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 30)
+	lbl.add_theme_color_override("font_color", Color(1, 1, 1))
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	lbl.add_theme_constant_override("outline_size", 6)
+	lbl.add_theme_stylebox_override("normal", _score_box_bg(team, left_side))
+	return lbl
+
+
+# Team-colored box: rounded on the outer corner, square where the two boxes meet.
+func _score_box_bg(team: Color, left_side: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = team
+	sb.border_color = team.lightened(0.25)
+	sb.set_border_width_all(2)
+	var r := 9
+	if left_side:
+		sb.corner_radius_top_left = r
+		sb.corner_radius_bottom_left = r
+	else:
+		sb.corner_radius_top_right = r
+		sb.corner_radius_bottom_right = r
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 6
+	sb.shadow_color = Color(0, 0, 0, 0.5)
+	sb.shadow_size = 6
+	return sb
 
 	# Boost reserve meter, bottom-center.
 	_boost_bar = ProgressBar.new()
@@ -52,21 +93,6 @@ func _ready() -> void:
 	add_child(_boost_caption)
 
 
-# Dark rounded panel behind the readout, with padding so text isn't flush.
-func _panel_bg() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0, 0, 0, 0.55)
-	sb.corner_radius_top_left = 6
-	sb.corner_radius_top_right = 6
-	sb.corner_radius_bottom_left = 6
-	sb.corner_radius_bottom_right = 6
-	sb.content_margin_left = 12
-	sb.content_margin_right = 14
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 10
-	return sb
-
-
 func _boost_bg() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0, 0, 0, 0.55)
@@ -93,6 +119,7 @@ func set_boost(amount: float, max_amount: float) -> void:
 
 ## Update the top-center scoreboard.
 func set_score(blue: int, orange: int) -> void:
-	if not _score_label:
+	if not _blue_score:
 		return
-	_score_label.text = "BLUE  %d  -  %d  ORANGE" % [blue, orange]
+	_blue_score.text = str(blue)
+	_orange_score.text = str(orange)

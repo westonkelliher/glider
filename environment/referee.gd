@@ -6,8 +6,8 @@ extends StaticBody3D
 @onready var goal_north: Area3D = $GoalNorth   # BLUE goal
 @onready var goal_south: Area3D = $GoalSouth   # ORANGE goal
 
-var score_blue := 0     # goals scored INTO the north/blue goal
-var score_orange := 0   # goals scored INTO the south/orange goal
+var score_blue := 0     # goals scored BY blue (ball into the orange/south goal)
+var score_orange := 0   # goals scored BY orange (ball into the blue/north goal)
 
 var _scoring := false    # guard against double-counting a lingering ball
 
@@ -20,20 +20,22 @@ func _ready() -> void:
 
 
 func _on_north_entered(body: Node) -> void:
-	if _scoring or not body.is_in_group("ball"):
-		return
-	_scoring = true
-	score_blue += 1
-	print("GOAL! BLUE  blue=%d orange=%d" % [score_blue, score_orange])
-	_reset_after_goal()
-
-
-func _on_south_entered(body: Node) -> void:
+	# Ball in the blue/north goal == ORANGE scored (orange attacks north).
 	if _scoring or not body.is_in_group("ball"):
 		return
 	_scoring = true
 	score_orange += 1
 	print("GOAL! ORANGE blue=%d orange=%d" % [score_blue, score_orange])
+	_reset_after_goal()
+
+
+func _on_south_entered(body: Node) -> void:
+	# Ball in the orange/south goal == BLUE scored (blue attacks south).
+	if _scoring or not body.is_in_group("ball"):
+		return
+	_scoring = true
+	score_blue += 1
+	print("GOAL! BLUE  blue=%d orange=%d" % [score_blue, score_orange])
 	_reset_after_goal()
 
 
