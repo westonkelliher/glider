@@ -75,6 +75,10 @@ func _build() -> void:
 	resume.pressed.connect(close)
 	vbox.add_child(resume)
 
+	var to_menu := _make_button("Quit to Main Menu")
+	to_menu.pressed.connect(_on_quit_to_menu)
+	vbox.add_child(to_menu)
+
 	# Controls reference, only visible while the menu is up.
 	var binds := RichTextLabel.new()
 	binds.bbcode_enabled = true
@@ -156,6 +160,12 @@ func close() -> void:
 	_root.visible = false
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+func _on_quit_to_menu() -> void:
+	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 
 func refresh_labels() -> void:
