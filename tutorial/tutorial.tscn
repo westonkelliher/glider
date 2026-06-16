@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://dpsoxhaky0u76"]
+
+[ext_resource type="Script" uid="uid://cawmhn35mqlsc" path="res://tutorial/tutorial_root.gd" id="1_root"]
+[ext_resource type="PackedScene" uid="uid://cjvqn1xv182j4" path="res://environment/floor.tscn" id="2_floor"]
+[ext_resource type="PackedScene" uid="uid://cjhkvk3egmt6j" path="res://scenes/glider_body.tscn" id="3_glider"]
+[ext_resource type="PackedScene" uid="uid://j0dybgoh7dsf" path="res://scenes/camera_rig.tscn" id="4_cam"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
+
+[sub_resource type="Sky" id="Sky_res"]
+sky_material = SubResource("Sky_mat")
+
+[sub_resource type="Environment" id="Env_res"]
+background_mode = 2
+sky = SubResource("Sky_res")
+ambient_light_source = 3
+ambient_light_energy = 0.4
+tonemap_mode = 2
+
+[node name="Tutorial" type="Node3D" unique_id=1489535058]
+script = ExtResource("1_root")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=806582850]
+environment = SubResource("Env_res")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2000393390]
+transform = Transform3D(0.7, -0.5, 0.5, 0, 0.7, 0.7, -0.7, -0.5, 0.5, 0, 80, 0)
+shadow_enabled = true
+
+[node name="Floor" parent="." unique_id=2085357987 instance=ExtResource("2_floor")]
+
+[node name="GliderBody" parent="." unique_id=1238736596 instance=ExtResource("3_glider")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 0, 30, 0)
+
+[node name="CameraRig" parent="." unique_id=1154786219 instance=ExtResource("4_cam")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 40, 40)
+
+[node name="Props" type="Node3D" parent="." unique_id=1708596486]

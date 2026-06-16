@@ -45,3 +45,7 @@ func _reset_after_goal() -> void:
 		if glider.has_method("reset_to_spawn"):
 			glider.reset_to_spawn()
 	_scoring = false
+	# Re-run the kickoff countdown (freezes the field for 3-2-1-GO).
+	var mc := get_tree().get_first_node_in_group("match_controller")
+	if mc and mc.has_method("kickoff"):
+		mc.kickoff()
