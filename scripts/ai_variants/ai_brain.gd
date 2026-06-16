@@ -184,6 +184,8 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 		clampf(steer.x + res[7], -1.0, 1.0),
 		clampf(steer.y + res[8], -1.0, 1.0),
 		clampf(steer.z + res[9], -1.0, 1.0))
+	# Bias roll toward upright so the craft stops cruising inverted.
+	ctl.targets = upright_roll(glider, ctl.targets)
 
 	var facing: float = ctx["nose"].dot(desired.normalized()) if desired.length() > 0.01 else 0.0
 	var boost_det: float = 0.0

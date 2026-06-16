@@ -35,7 +35,7 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 	var aim: Vector3 = _compute_aim(glider, ball, ctx)
 	if aim_noise > 0.0:
 		aim += Vector3(rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise))
-	ctl.targets = _steer(glider, aim)
+	ctl.targets = upright_roll(glider, _steer(glider, aim))
 	ctl.boost = _decide_boost(glider, ball, ctx, aim)
 	ctl.hand_brake = clampf(_brake_amount(glider, ball, ctx, aim), 0.0, 1.0)
 	ctl.slow = _decide_slow(glider, ball, ctx, aim)
@@ -101,6 +101,24 @@ func _steer(glider: Glider, aim: Vector3) -> Vector3:
 		clampf(ROLL_SIGN * local.x * 0.5, -1.0, 1.0),
 		clampf(YAW_SIGN * local.x, -1.0, 1.0),
 	)
+
+
+## Drive the roll target toward flying upright, proportional to how far the
+## craft is banked from level. Replaces the steering bank (which is what sends
+## the AI inverted) — yaw still handles turning, so the craft just looks sane.
+## Returns `targets` with its roll (y) component overwritten.
+static func upright_roll(glider: Glider, targets: Vector3) -> Vector3:
+	var basis: Basis = glider.global_transform.basis.orthonormalized()
+	var nose: Vector3 = -basis.z
+	# World-up projected into the plane perpendicular to the nose (the roll plane).
+	var up_proj: Vector3 = Vector3.UP - Vector3.UP.dot(nose) * nose
+	if up_proj.length() < 0.05:
+		return targets   # nose near-vertical: roll is ill-defined, leave it alone
+	up_proj = up_proj.normalized()
+	# Signed bank angle of the craft's up-vector from level, about the nose axis.
+	var angle: float = basis.y.signed_angle_to(up_proj, nose)
+	targets.y = clampf(-angle / (PI * 0.5), -1.0, 1.0)
+	return targets
 
 
 func _decide_boost(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:

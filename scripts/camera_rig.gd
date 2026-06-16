@@ -5,6 +5,9 @@ extends Node3D
 @export var min_pitch: float = -1.4
 @export var max_pitch: float = 1.4
 @export var rotate_lerp: float = 5.0  # how fast ball/velocity cams swing to aim
+@export var floor_clearance: float = 1.5  # keep the rig this far above the floor (y=0)
+@export var look_tilt_max: float = 0.55   # max right-stick tilt (rad) in follow cams
+@export var look_tilt_lerp: float = 8.0   # how fast the tilt eases in/out
 
 @export var target: Node3D
 @export var ball: Node3D
@@ -16,6 +19,9 @@ var mode: Mode = Mode.BALL
 
 var yaw: float = 0.0
 var pitch: float = 0.0
+
+# Smoothed right-stick look-tilt applied on top of the ball/velocity cams.
+var _look_tilt: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -50,8 +56,26 @@ func _process(delta: float) -> void:
 			_process_free(delta)
 		Mode.BALL:
 			_aim_at(_ball_aim_point(), delta)
+			_apply_look_tilt(delta)
 		Mode.VELOCITY:
 			_aim_at(position + _velocity_dir(), delta)
+			_apply_look_tilt(delta)
+
+
+# Right-stick "peek" in the follow cams: tilt the view around while the subject
+# stays roughly framed (Rocket-League style), easing back to centre on release.
+func _apply_look_tilt(delta: float) -> void:
+	var stick := Vector2(
+		Input.get_axis("cam_left", "cam_right"),
+		Input.get_axis("cam_up", "cam_down"))
+	_look_tilt = _look_tilt.lerp(stick * look_tilt_max, clampf(look_tilt_lerp * delta, 0.0, 1.0))
+	if _look_tilt.length_squared() < 0.00001:
+		return
+	# Yaw around world-up, then pitch around the camera's own right axis, applied
+	# on top of the freshly-aimed basis (so it never accumulates drift).
+	var b := Basis(Vector3.UP, -_look_tilt.x) * transform.basis
+	b = b.rotated(b.x.normalized(), -_look_tilt.y)
+	transform.basis = b.orthonormalized()
 
 
 func _process_free(delta: float) -> void:
@@ -103,3 +127,7 @@ func _physics_process(delta: float) -> void:
 	var to_target := target.position - position
 	var sped := 0.2 + 3.0 * to_target.length() + 2.0 * to_target.length()**2
 	position = position.move_toward(target.position, sped * delta)
+	# "Collide" with the floor: never let the rig dip below the ground plane so
+	# the view doesn't clip under the world.
+	if position.y < floor_clearance:
+		position.y = floor_clearance
