@@ -27,6 +27,15 @@ var seeds: Array = [1]
 var noise := 1.0
 var reward := "success"     # "success" (binary) or "dot" (continuous shaped reward)
 var dot_frames := 240       # fixed time budget per rep in "dot" mode
+# CURRICULUM difficulty in [0,1]: 0 = EASY (slow ball + generous time), 1 = full.
+# Difficulty is tuned by SLOWING (ball speed / time budget), NOT by re-angling the
+# geometry — the situation space stays just as wide at every difficulty.
+var difficulty := 1.0
+const EASY_VEL := 0.40      # ball-velocity multiplier at difficulty 0
+const EASY_TIME := 1.5      # shot/position time-budget multiplier at difficulty 0
+# Jitter multiplier (>1 widens the per-rep position/velocity scatter). Used as a
+# REGULARIZER during training so the policy can't overfit exact setups.
+var jitter_mult := 1.0
 
 var rng := RandomNumberGenerator.new()
 var referee: Node
@@ -63,11 +72,19 @@ func _ready() -> void:
 	glider.target_goal = NORTH
 	add_child(glider)
 	glider.controller.aim_noise = noise
-	scenarios = Scenarios.scenario_set(scen_set)
+	# Filter the set to the scenarios this run's reward mode can score: dot mode
+	# keeps only "reward":"dot" scenarios; success mode keeps the binary kinds.
+	# This is what lets the alternating trainer score the SAME set two ways.
+	scenarios = Scenarios.scenario_set(scen_set).filter(
+		func(s: Dictionary) -> bool:
+			var sr: String = s.get("reward", "success")
+			return sr == "dot" if reward == "dot" else sr != "dot")
 	_load_manifest()
-	print("[ga] batch genomes=%d set=%s reps=%d seeds=%s reward=%s dot_frames=%d" % [
-		genomes.size(), scen_set, reps, str(seeds), reward, dot_frames])
-	if genomes.is_empty():
+	print("[ga] batch genomes=%d set=%s reps=%d seeds=%s reward=%s dot_frames=%d diff=%.2f jit=%.2f" % [
+		genomes.size(), scen_set, reps, str(seeds), reward, dot_frames, difficulty, jitter_mult])
+	if genomes.is_empty() or scenarios.is_empty():
+		if scenarios.is_empty():
+			print("[ga] ERROR: no scenarios for set=%s reward=%s" % [scen_set, reward])
 		get_tree().quit()
 		return
 	_start_genome()
@@ -105,7 +122,8 @@ func _start_seed() -> void:
 func _setup_rep() -> void:
 	var s: Dictionary = scenarios[si]
 	var bpos: Vector3 = _jvec(s["b_pos"], POS_FLOOR)
-	var bvel: Vector3 = _jvec(s["b_vel"], VEL_FLOOR)
+	# EASY = slower ball: scale the base velocity by difficulty before jitter.
+	var bvel: Vector3 = _jvec(s["b_vel"] * lerpf(EASY_VEL, 1.0, difficulty), VEL_FLOOR)
 	ball.global_position = bpos
 	ball.velocity = bvel
 	ball.last_position = bpos
@@ -142,8 +160,8 @@ func _place_glider(pos: Vector3, face: Vector3, vel: Vector3) -> void:
 	glider.ail_yaw_speed = 0.0
 
 
-const SHOT_FRAMES := 600
-const KEEP_FRAMES := 300
+const SHOT_FRAMES := 300   # 5s @60fps — ample for these close shots; also caps
+const KEEP_FRAMES := 300   # the cost of a MISS, which dominated success-gen time
 
 
 func _physics_process(_d: float) -> void:
@@ -169,7 +187,8 @@ func _physics_process(_d: float) -> void:
 	elif s["kind"] == "position":
 		var b_thresh: float = float(s.get("b_thresh", POS_B_THRESH))
 		var d_thresh: float = float(s.get("d_thresh", POS_D_THRESH))
-		var budget: int = int(s.get("frames", SHOT_FRAMES))
+		# EASY = more time to settle behind the ball.
+		var budget: int = int(float(s.get("frames", SHOT_FRAMES)) * lerpf(EASY_TIME, 1.0, difficulty))
 		if _positioned(b_thresh, d_thresh):
 			ended = true; success = true
 		elif rep_frame >= budget:
@@ -177,7 +196,7 @@ func _physics_process(_d: float) -> void:
 	elif s["kind"] == "shot":
 		if db > 0:
 			ended = true; success = true
-		elif rep_frame >= SHOT_FRAMES:
+		elif rep_frame >= int(SHOT_FRAMES * lerpf(EASY_TIME, 1.0, difficulty)):
 			ended = true
 	else:
 		if do_ > 0:
@@ -231,7 +250,7 @@ func _positioned(b_thresh: float, d_thresh: float) -> bool:
 
 
 func _js(base: float, floor_amp: float) -> float:
-	var amp: float = maxf(FRAC * absf(base), floor_amp)
+	var amp: float = maxf(FRAC * absf(base), floor_amp) * jitter_mult
 	return base + rng.randf_range(-amp, amp)
 
 
@@ -251,6 +270,8 @@ func _parse_args() -> void:
 			"noise": noise = float(kv[1])
 			"reward": reward = kv[1]
 			"dot_frames": dot_frames = int(kv[1])
+			"difficulty": difficulty = clampf(float(kv[1]), 0.0, 1.0)
+			"jitter": jitter_mult = maxf(0.0, float(kv[1]))
 			"seeds":
 				seeds = []
 				for s: String in kv[1].split(","):

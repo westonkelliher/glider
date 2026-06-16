@@ -19,8 +19,9 @@ func _compute_aim(glider: Glider, ball: Node3D, ctx: Dictionary) -> Vector3:
 func _decide_boost(glider: Glider, ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:
     return super._decide_boost(glider, ball, ctx, aim)
 
-func _decide_brake(glider: Glider, ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:
-    return false  # HANDBRAKE: cuts air friction -> very sharp turns, bleeds speed
+func _brake_amount(glider: Glider, ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
+    return super._brake_amount(glider, ball, ctx, aim)  # ANALOG [0,1] handbrake:
+    # cuts air friction -> sharper turns, bleeds speed. Ramp it, don't flip 0/1.
 
 func _decide_slow(glider: Glider, ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
     return 0.0    # [0,1] analog decel, good for setting up a shot

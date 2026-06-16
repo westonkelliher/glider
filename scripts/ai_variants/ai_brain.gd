@@ -191,7 +191,10 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 		boost_det = 0.6
 	ctl.boost = (boost_det + res[10]) > 0.5 and facing > 0.1
 	ctl.slow = clampf(0.0 + res[11], 0.0, 1.0)
-	ctl.hand_brake = 1.0 if (0.0 + res[12]) > 0.5 else 0.0
+	# ANALOG handbrake: deterministic turn-based baseline + net residual, so the
+	# net can shape braking continuously (it could only flip 0/1 before).
+	var brake_det: float = _brake_amount(glider, ball, ctx, aim)
+	ctl.hand_brake = clampf(brake_det + res[12], 0.0, 1.0)
 	return ctl
 
 

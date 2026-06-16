@@ -80,18 +80,30 @@ func _ready() -> void:
 ## glider is oriented to face the (jittered) ball and given velocity along that
 ## facing at `g_speed`. Shots attack +Z; keeper balls are launched toward -Z.
 func _build_scenarios() -> void:
-	scenarios = scenario_set(scen_set)
+	# This standalone harness only scores BINARY kinds; drop dot-reward scenarios.
+	scenarios = scenario_set(scen_set).filter(
+		func(s: Dictionary) -> bool: return s.get("reward", "success") != "dot")
 
 
 ## Shared scenario definitions (also used by the batched GA harness).
-## Sets: "train" (diverse binary, drives selection), "test" (held-out binary,
-## DISTINCT from train, overfitting check), "basics" (continuous dot-reward,
-## phase-1 flight-control curriculum).
+## Sets: "train" and "test" each carry BOTH continuous dot-reward flight
+## scenarios (tagged "reward":"dot") AND binary goal/shot/keep/position
+## scenarios (default "reward":"success"). The harness filters by the run's
+## reward mode, so a single set serves both the dot and the success generations
+## of the alternating trainer. "test" is held-out, DISTINCT from train.
+## "basics" is the legacy dot-only pool (kept for the debug entrypoint).
 static func scenario_set(which: String) -> Array:
 	match which:
 		"test": return test_scenarios()
 		"basics": return basics_scenarios()
 		_: return train_scenarios()
+
+
+## Tag every scenario in `arr` as continuous dot-reward (flight-control shaping).
+static func _tag_dot(arr: Array) -> Array:
+	for s: Dictionary in arr:
+		s["reward"] = "dot"
+	return arr
 
 
 ## Defaults for the "position" success kind (lined-up-behind-ball check).
@@ -107,7 +119,7 @@ const POS_D_THRESH := 26.0  # AND distance to ball <= this (world units)
 ## side / low+slow / high). These need not be "scoreable", only diverse striking
 ## setups. Ball `kind` stays "shot" (harmless: dot mode ignores it).
 static func basics_scenarios() -> Array:
-	return [
+	return _tag_dot([
 		# central, ball roughly still or drifting goalward — pure "knock it north".
 		{"name": "b_central_still", "kind": "shot", "g_pos": Vector3(0, 28, 120),   "g_speed": 20.0, "b_pos": Vector3(0, 26, 150),    "b_vel": Vector3(0, 0, 0)},
 		{"name": "b_central_slow",  "kind": "shot", "g_pos": Vector3(0, 28, 115),   "g_speed": 22.0, "b_pos": Vector3(0, 26, 148),    "b_vel": Vector3(0, 0, 3)},
@@ -128,7 +140,36 @@ static func basics_scenarios() -> Array:
 		{"name": "b_side_offset",   "kind": "shot", "g_pos": Vector3(-35, 28, 150), "g_speed": 22.0, "b_pos": Vector3(0, 26, 150),    "b_vel": Vector3(0, 0, 0)},
 		# diagonal wide + drifting goalward.
 		{"name": "b_diag_drift",    "kind": "shot", "g_pos": Vector3(30, 30, 110),  "g_speed": 22.0, "b_pos": Vector3(20, 26, 150),   "b_vel": Vector3(-3, 0, 2)},
-	]
+	])
+
+
+## Dot-reward (flight-control) scenarios that live INSIDE the train set. Diverse
+## striking/recovery setups; scored continuously (ball-vel toward +Z goal at the
+## end of dot_frames). Geometrically distinct from the test-dot set below.
+static func train_dot_scenarios() -> Array:
+	return _tag_dot([
+		{"name": "d_central",  "kind": "shot", "g_pos": Vector3(0, 28, 120),   "g_speed": 20.0, "b_pos": Vector3(0, 26, 150),   "b_vel": Vector3(0, 0, 0)},
+		{"name": "d_away",     "kind": "shot", "g_pos": Vector3(0, 28, 110),   "g_speed": 20.0, "b_pos": Vector3(0, 26, 140),   "b_vel": Vector3(0, 0, -4)},
+		{"name": "d_wide_l",   "kind": "shot", "g_pos": Vector3(-40, 28, 120), "g_speed": 22.0, "b_pos": Vector3(-40, 26, 150),  "b_vel": Vector3(0, 0, 0)},
+		{"name": "d_wide_r",   "kind": "shot", "g_pos": Vector3(40, 28, 120),  "g_speed": 22.0, "b_pos": Vector3(40, 26, 150),   "b_vel": Vector3(0, 0, 0)},
+		{"name": "d_lateral",  "kind": "shot", "g_pos": Vector3(0, 28, 120),   "g_speed": 22.0, "b_pos": Vector3(-10, 26, 150),  "b_vel": Vector3(8, 0, 0)},
+		{"name": "d_far",      "kind": "shot", "g_pos": Vector3(0, 30, 70),    "g_speed": 26.0, "b_pos": Vector3(0, 26, 140),   "b_vel": Vector3(0, 0, 1)},
+		{"name": "d_low_slow", "kind": "shot", "g_pos": Vector3(0, 12, 120),   "g_speed": 12.0, "b_pos": Vector3(0, 20, 150),   "b_vel": Vector3(0, 0, 0)},
+		{"name": "d_diag",     "kind": "shot", "g_pos": Vector3(30, 30, 110),  "g_speed": 22.0, "b_pos": Vector3(20, 26, 150),   "b_vel": Vector3(-3, 0, 2)},
+	])
+
+
+## Dot-reward (flight-control) scenarios that live INSIDE the test set. Held-out:
+## distinct distances/offsets/speeds from train_dot_scenarios.
+static func test_dot_scenarios() -> Array:
+	return _tag_dot([
+		{"name": "td_near",    "kind": "shot", "g_pos": Vector3(0, 28, 150),   "g_speed": 18.0, "b_pos": Vector3(0, 26, 165),   "b_vel": Vector3(0, 0, 1)},
+		{"name": "td_offside", "kind": "shot", "g_pos": Vector3(-35, 28, 150), "g_speed": 22.0, "b_pos": Vector3(0, 26, 150),   "b_vel": Vector3(0, 0, 0)},
+		{"name": "td_high",    "kind": "shot", "g_pos": Vector3(0, 55, 120),   "g_speed": 20.0, "b_pos": Vector3(0, 26, 150),   "b_vel": Vector3(0, 0, 0)},
+		{"name": "td_lat_r",   "kind": "shot", "g_pos": Vector3(0, 28, 125),   "g_speed": 22.0, "b_pos": Vector3(12, 26, 150),  "b_vel": Vector3(-8, 0, 0)},
+		{"name": "td_slowfar", "kind": "shot", "g_pos": Vector3(0, 30, 80),    "g_speed": 24.0, "b_pos": Vector3(0, 26, 145),   "b_vel": Vector3(0, 0, -2)},
+		{"name": "td_diag_r",  "kind": "shot", "g_pos": Vector3(-30, 30, 115), "g_speed": 22.0, "b_pos": Vector3(-18, 26, 152),  "b_vel": Vector3(3, 0, 2)},
+	])
 
 
 ## DIVERSE BINARY TRAIN set (drives selection). Spans ball positions (own half,
@@ -140,7 +181,7 @@ static func basics_scenarios() -> Array:
 ## "position" (reach an advantageous lined-up spot: behindness>=b_thresh AND
 ## dist<=d_thresh within budget). Difficulty is tuned by SLOWING, not re-angling.
 static func train_scenarios() -> Array:
-	return [
+	return train_dot_scenarios() + [
 		# --- SHOTS (drive ball into north/+Z goal, mouth |x|<40) ---
 		{"name": "shot_central",    "kind": "shot",     "g_pos": Vector3(0, 28, 130),   "g_speed": 22.0, "b_pos": Vector3(0, 26, 152),    "b_vel": Vector3(0, 0, 2)},
 		{"name": "shot_left",       "kind": "shot",     "g_pos": Vector3(-45, 28, 150), "g_speed": 22.0, "b_pos": Vector3(-38, 26, 165),  "b_vel": Vector3(0, 0, 1)},
@@ -178,7 +219,7 @@ static func train_scenarios() -> Array:
 ## distances, offsets, angles, ball speeds, and a different mix of the same three
 ## kinds). Used only to score the final champion -> train-vs-test gap.
 static func test_scenarios() -> Array:
-	return [
+	return test_dot_scenarios() + [
 		# --- SHOTS ---
 		{"name": "t_shot_far",      "kind": "shot",     "g_pos": Vector3(0, 30, 95),    "g_speed": 24.0, "b_pos": Vector3(0, 26, 140),    "b_vel": Vector3(0, 0, 3)},
 		{"name": "t_shot_wideleft", "kind": "shot",     "g_pos": Vector3(-20, 28, 145), "g_speed": 22.0, "b_pos": Vector3(-30, 26, 160),  "b_vel": Vector3(-3, 0, 1)},

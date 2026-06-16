@@ -5,19 +5,19 @@ extends AiBase
 ## so it re-sets a clean strike instead of flying a wide arc. Aim/boost = base.
 
 
-## True when the craft is moving fast but its nose points well off where it
-## wants to go: handbrake-pivot toward the aim. False once roughly aligned.
-func _decide_brake(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:
+## Analog brake [0,1]: ramps up as the craft (moving fast) points further off
+## where it wants to go — handbrake-pivot toward the aim. Fades to 0 once aligned.
+func _brake_amount(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
 	var speed: float = ctx["speed"]
 	if speed < 15.0:
-		return false  # too slow: braking would just stall us
+		return 0.0  # too slow: braking would just stall us
 	var desired: Vector3 = aim - glider.global_position
 	if desired.length() < 0.001:
-		return false
+		return 0.0
 	var facing: float = ctx["nose"].dot(desired.normalized())
-	# Small jittered threshold (~0.3) keeps play stochastic.
+	# Ramp around a jittered ~0.3 facing threshold (keeps play stochastic).
 	var threshold: float = 0.3 + rng.randf_range(-0.05, 0.05)
-	return facing < threshold
+	return smoothstep(threshold + 0.25, threshold - 0.25, facing)
 
 
 ## Positive decel when CLOSE to the ball but poorly lined up to shoot: shed

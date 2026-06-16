@@ -132,23 +132,23 @@ func _center_correct(aim: Vector3, ctx: Dictionary) -> Vector3:
 	return out
 
 
-# handbrake brake + slow, standalone thresholds; suppressed only while recovering.
-func _decide_brake(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:
+# Analog handbrake; suppressed (0) while recovering or arcing goalside.
+func _brake_amount(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
 	if _recovering:
-		return false
+		return 0.0
 	var speed: float = ctx["speed"]
 	if speed < 15.0:
-		return false
+		return 0.0
 	var desired: Vector3 = aim - glider.global_position
 	if desired.length() < 0.001:
-		return false
+		return 0.0
 	# While arcing goalside, let the arc do the repositioning — don't also
 	# handbrake-pivot, or the two fight and we stall the turn.
 	if _arcing:
-		return false
+		return 0.0
 	var facing: float = ctx["nose"].dot(desired.normalized())
 	var threshold: float = 0.3 + rng.randf_range(-0.05, 0.05)
-	return facing < threshold
+	return smoothstep(threshold + 0.25, threshold - 0.25, facing)
 
 
 func _decide_slow(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:

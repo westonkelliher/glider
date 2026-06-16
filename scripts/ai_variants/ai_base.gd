@@ -37,7 +37,7 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 		aim += Vector3(rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise))
 	ctl.targets = _steer(glider, aim)
 	ctl.boost = _decide_boost(glider, ball, ctx, aim)
-	ctl.hand_brake = 1.0 if _decide_brake(glider, ball, ctx, aim) else 0.0
+	ctl.hand_brake = clampf(_brake_amount(glider, ball, ctx, aim), 0.0, 1.0)
 	ctl.slow = _decide_slow(glider, ball, ctx, aim)
 	return ctl
 
@@ -110,8 +110,21 @@ func _decide_boost(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3)
 	return slow_or_far and facing > 0.3
 
 
-func _decide_brake(_glider: Glider, _ball: Node3D, _ctx: Dictionary, _aim: Vector3) -> bool:
-	return false
+## ANALOG handbrake [0,1]: the engine lerps both wing-retraction and turn-rate
+## continuously on this (glider_body: target_extension / rrate), so we return a
+## smooth amount, NOT a 0/1 flag. Brake hardest when the aim has fallen off the
+## nose (a sharp pivot is needed) and we're fast enough that braking helps the
+## turn instead of stalling. Variants override this for state-specific braking.
+func _brake_amount(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
+	var desired: Vector3 = aim - glider.global_position
+	if desired.length() < 0.001:
+		return 0.0
+	var facing: float = ctx["nose"].dot(desired.normalized())   # 1 aligned, -1 opposed
+	# Ramp in as the aim drifts off the nose (facing 0.5 -> 0, -0.3 -> full brake).
+	var turn: float = smoothstep(0.5, -0.3, facing)
+	# Gate by speed: braking while slow just stalls us (fade in over 12..22 u/s).
+	var fast: float = smoothstep(12.0, 22.0, ctx["speed"])
+	return turn * fast
 
 
 func _decide_slow(_glider: Glider, _ball: Node3D, _ctx: Dictionary, _aim: Vector3) -> float:

@@ -201,22 +201,22 @@ func _decide_boost(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3)
 			return slow_or_far and facing > 0.3
 
 
-func _decide_brake(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:
+func _brake_amount(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
 	var desired: Vector3 = aim - glider.global_position
 	if desired.length() < 0.001:
-		return false
+		return 0.0
 	var facing: float = ctx["nose"].dot(desired.normalized())
 	var behindness: float = ctx["behindness"]
 	match _state:
 		ST_LINEUP:
 			# Handbrake to snap around when badly misaligned (wrong side / aim
-			# well off the nose), so we don't sail wide.
-			return behindness < -0.1 or facing < 0.2
+			# well off the nose), so we don't sail wide. Ramp on both cues.
+			return maxf(smoothstep(0.1, -0.3, behindness), smoothstep(0.45, -0.05, facing))
 		ST_DEFEND:
 			# Sharp pivot to recover goal-side when pointing wrong way.
-			return facing < 0.0
+			return smoothstep(0.25, -0.25, facing)
 		_:
-			return false
+			return 0.0
 
 
 func _decide_slow(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> float:
