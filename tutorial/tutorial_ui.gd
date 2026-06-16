@@ -100,7 +100,9 @@ func _build_buttons() -> void:
 	row.anchor_top = 1.0
 	row.anchor_right = 1.0
 	row.anchor_bottom = 1.0
-	row.offset_left = -330.0
+	# Wide enough for all three 150px buttons + separation (~474px) so none
+	# overflow off the right edge of the screen.
+	row.offset_left = -510.0
 	row.offset_top = -72.0
 	row.offset_right = -24.0
 	row.offset_bottom = -24.0

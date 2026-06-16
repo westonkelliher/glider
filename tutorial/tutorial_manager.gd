@@ -198,6 +198,11 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# The Back button (mapped to "reset") restarts the current stage, mirroring
+	# how it resets a match.
+	if event.is_action_pressed("reset"):
+		_on_restart()
+		return
 	var accept: bool = event.is_action_pressed("ui_accept") or event.is_action_pressed("launch")
 	match _state:
 		State.INTRO:

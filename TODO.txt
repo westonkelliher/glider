@@ -53,5 +53,6 @@
   roll or right barrel roll based on most recent left stick input). once
   flipping, velocity is along nose direction like in rocket league. Make sure
   to get the dot product math CORRECT 
-* back button needs to work as a reset on tutorials. also fix the UI buttons
+* [DONE] back button needs to work as a reset on tutorials. also fix the UI buttons
   for tuts, theyre off screen
+* stage select in tutorial pause menu
