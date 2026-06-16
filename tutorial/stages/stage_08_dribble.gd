@@ -3,10 +3,10 @@ extends TutorialStage
 ## nudge it into a target ring off to one side (a straight smash overshoots, so
 ## the player has to steer the ball, not just hit it). Uses ball-cam from stage 7.
 
-const SPEED: float = 14.0
+const SPEED: float = 6.0
 
 var _ball: Node3D = null
-var _ball_start: Vector3 = Vector3(0.0, 5.0, -40.0)
+var _ball_start: Vector3 = Vector3(0.0, 2.4, -40.0)  # y = ball radius: resting on the floor
 var _target: TutZone = null
 var _target_pos: Vector3 = Vector3(26.0, 8.0, -78.0)
 var _done: bool = false
@@ -43,6 +43,7 @@ func par_time() -> float:
 
 func build() -> void:
 	_ball = spawn_ball(_ball_start)
+	_ball.set("velocity", Vector3.ZERO)  # cancel the default pop-up; rest it on the floor
 	_target = TutZone.make(_target_pos, Vector3(22.0, 16.0, 22.0))
 	add_child(_target)
 	_target.set_color(Color(0.3, 1.0, 0.45))

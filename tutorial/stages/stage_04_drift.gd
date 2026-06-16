@@ -9,8 +9,8 @@ extends TutorialStage
 ## A near-180 hairpin around a pylon teaches this; it is only makeable by
 ## drifting the nose through the turn.
 
-const SPEED: float = 22.0
-const HAIRPIN_R: float = 22.0
+const SPEED: float = 20.0
+const HAIRPIN_R: float = 10.0
 
 var _gates: Array[TutGate] = []
 var _passed: int = 0
@@ -55,7 +55,7 @@ func build() -> void:
 	_gates.append(entry)
 
 	# Visible pylon to round, sitting at the apex of the hairpin.
-	var pylon: TutMarker = TutMarker.make(Vector3(HAIRPIN_R, 14.0, -6.0), 7.0)
+	var pylon: TutMarker = TutMarker.make(Vector3(HAIRPIN_R, 14.0, 6.0), 7.0)
 	pylon.glider = glider
 	add_child(pylon)
 

@@ -4,10 +4,10 @@ extends TutorialStage
 ## the floor and a generous bluish TutZone goal behind it. The player arrives
 ## with seed speed and must strike the ball through the goal mouth.
 
-const SPEED: float = 24.0
+const SPEED: float = 6.0
 
 var _ball: Node3D = null
-var _ball_start: Vector3 = Vector3(0.0, 6.0, -40.0)
+var _ball_start: Vector3 = Vector3(0.0, 2.4, -40.0)  # y = ball radius: resting on the floor
 var _goal: TutZone = null
 var _scored: bool = false
 
@@ -43,6 +43,7 @@ func par_time() -> float:
 func build() -> void:
 	# The ball, registered with the camera so ball-cam tracks it.
 	_ball = spawn_ball(_ball_start)
+	_ball.set("velocity", Vector3.ZERO)  # cancel the default pop-up; rest it on the floor
 
 	# The goal: a generous soccer-mouth zone past the ball, recolored bluish.
 	_goal = TutZone.make(Vector3(0.0, 12.0, -90.0), Vector3(40.0, 24.0, 8.0))
