@@ -8,6 +8,19 @@ class_name MatchController
 @export var count_from: int = 3
 @export var go_linger: float = 0.6   # seconds "GO!" stays up after release
 
+## Symmetric kickoff spawns (Rocket League style), given for the BLUE/player
+## side (z > 0); the orange/AI side is the mirror (-x, -z). Each entry is the
+## (x, z) ground position for that side. Picked once per kickoff and shared by
+## both teams so they stay mirrored. Kept within the arena scale (|x|<=10.5,
+## |z|<=28). Facing per side is preserved from each glider's scene transform.
+const KICKOFF_SPAWNS: Array[Vector2] = [
+	Vector2(0.0, 28.0),     # back-center
+	Vector2(7.0, 22.0),     # back-right diagonal
+	Vector2(-7.0, 22.0),    # back-left diagonal
+	Vector2(10.5, 14.0),    # right corner
+	Vector2(-10.5, 14.0),   # left corner
+]
+
 var _label: Label = null
 var _busy: bool = false
 
@@ -18,6 +31,7 @@ func _ready() -> void:
 	_build_label()
 	# Wait one frame so the gliders and ball have joined their groups in _ready.
 	await get_tree().process_frame
+	place_kickoff(get_tree())
 	kickoff()
 
 
@@ -40,6 +54,18 @@ func _build_label() -> void:
 	_label.add_theme_constant_override("outline_size", 12)
 	_label.visible = false
 	add_child(_label)
+
+
+## Pick one random kickoff spawn (shared by both teams so they stay mirrored)
+## and apply it to every glider, then snap them back to that spawn. Static so
+## the referee can reuse it without duplicating the spawn table.
+static func place_kickoff(tree: SceneTree) -> void:
+	var blue_xz: Vector2 = KICKOFF_SPAWNS[randi() % KICKOFF_SPAWNS.size()]
+	for g: Node in tree.get_nodes_in_group("glider"):
+		if g.has_method("set_kickoff_position"):
+			g.set_kickoff_position(blue_xz)
+		if g.has_method("reset_to_spawn"):
+			g.reset_to_spawn()
 
 
 ## Freeze the field, count down, then release on GO. Safe to call repeatedly.
@@ -72,9 +98,7 @@ func reset_match() -> void:
 	if ball:
 		ball.global_position = Vector3(0, 5, 0)
 		ball.set("velocity", Vector3.UP * 15.0)
-	for g: Node in get_tree().get_nodes_in_group("glider"):
-		if g.has_method("reset_to_spawn"):
-			g.reset_to_spawn()
+	place_kickoff(get_tree())
 	kickoff()
 
 

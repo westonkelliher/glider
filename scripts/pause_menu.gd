@@ -5,6 +5,14 @@ extends CanvasLayer
 
 var glider: Node # must expose toggle_tuning(), toggle_control(), menu_labels()
 
+# Controls reference, shown only while paused. Controller-first; keyboard/mouse
+# is the dimmed secondary line.
+const BINDS := "[color=aqua][b]Fly[/b][/color]     L-stick pitch + turn · [color=yellow]LB[/color] air-roll (RL) · LB/RB yaw (Pilot)\n" \
+	+ "[color=orange][b]Power[/b][/color]   B boost · X brake\n" \
+	+ "[color=lime][b]Camera[/b][/color]  R-stick aim · R3 free · Y ball / velocity\n" \
+	+ "[color=violet][b]System[/b][/color]  Start pause · Back reset · tuning/scheme in pause menu (T/C)\n" \
+	+ "[color=#888888]K&M  WASD + Q/E · Shift air-roll · Space/RMB/LMB · mouse aim · F/Y · T/C · R reset · Esc[/color]"
+
 var is_open := false
 var _root: Control
 var _tuning_btn: Button
@@ -55,6 +63,18 @@ func _build() -> void:
 	resume.text = "Resume"
 	resume.pressed.connect(close)
 	vbox.add_child(resume)
+
+	# Controls reference, only visible while the menu is up.
+	var binds := RichTextLabel.new()
+	binds.bbcode_enabled = true
+	binds.fit_content = true
+	binds.scroll_active = false
+	binds.autowrap_mode = TextServer.AUTOWRAP_OFF
+	binds.custom_minimum_size = Vector2(880, 0)
+	binds.add_theme_font_size_override("normal_font_size", 20)
+	binds.add_theme_font_size_override("bold_font_size", 20)
+	binds.text = BINDS
+	vbox.add_child(binds)
 
 	refresh_labels()
 

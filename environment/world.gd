@@ -5,8 +5,15 @@ extends Node3D
 ## Runs in the editor too (@tool); spawned nodes are runtime-only (no owner),
 ## so they preview live but are never baked into the scene file.
 
-@export var area_size: float = 200.0:
+@export var area_size: float = 500.0:
 	set(v): area_size = v; _regenerate()
+## Half-extents (x, z) of the playing court. Scenery is excluded from this
+## rectangle (centered on the origin) plus `court_margin` so nothing spawns
+## on the field. Defaults match the arena footprint (240 x 400 -> 120 x 200).
+@export var court_half_extent: Vector2 = Vector2(120.0, 200.0):
+	set(v): court_half_extent = v; _regenerate()
+@export var court_margin: float = 10.0:
+	set(v): court_margin = v; _regenerate()
 @export var tree_count: int = 120:
 	set(v): tree_count = v; _regenerate()
 @export var rock_count: int = 80:
@@ -31,9 +38,19 @@ func _regenerate() -> void:
 
 func _scatter(rng: RandomNumberGenerator, count: int, factory: Callable) -> void:
 	var half := area_size * 0.5
+	var ex := court_half_extent.x + court_margin
+	var ez := court_half_extent.y + court_margin
 	for i in count:
 		var node: Node3D = factory.call(rng)
-		node.position = Vector3(rng.randf_range(-half, half), 0.0, rng.randf_range(-half, half))
+		var x := 0.0
+		var z := 0.0
+		# Re-roll until the candidate lands outside the court rectangle.
+		for _attempt in 32:
+			x = rng.randf_range(-half, half)
+			z = rng.randf_range(-half, half)
+			if absf(x) > ex or absf(z) > ez:
+				break
+		node.position = Vector3(x, 0.0, z)
 		node.rotate_y(rng.randf_range(0.0, TAU))
 		add_child(node)
 

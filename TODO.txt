@@ -35,14 +35,14 @@
   when boost starts recharging - they need to let go and press it again
 * refactor the way pausing and pre-game countdown stops gameplay. right now you
   can e.g. waste your boost before game starts. Also make sure all values are reset properly after goals
-* multiple starting positions (rocket league style)
+* [DONE] multiple starting positions (rocket league style)
 * reduce the size of the whole arena + goals. it's bigger than rocket league. maybe 30% reduction
 * [DONE] get rid of missile mechanics
-* show scores n stuff during gameplay
+* [DONE] show scores n stuff during gameplay
 * instant replays on goal
 * [DONE] remove the UI that shows speed and other values
-* move controls UI in the pause menu
-* get rid of rocks and trees in the playing field and cunstruct scenery outside the court
+* [DONE] move controls UI in the pause menu
+* [DONE] get rid of rocks and trees in the playing field and cunstruct scenery outside the court
 * early tutorial for roll vs yaw
 * [DONE] go back UI button on tutorials and exit tuts button and anything else reasonable
 * goal zones recessed (such that ball must cross the "line"). also draw the "line"
@@ -53,3 +53,5 @@
   roll or right barrel roll based on most recent left stick input). once
   flipping, velocity is along nose direction like in rocket league. Make sure
   to get the dot product math CORRECT 
+* back button needs to work as a reset on tutorials. also fix the UI buttons
+  for tuts, theyre off screen

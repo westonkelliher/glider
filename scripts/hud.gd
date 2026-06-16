@@ -1,32 +1,28 @@
 extends CanvasLayer
 ## Flight readout. Built in code so no scene edit is needed; the glider owns one
-## of these and pushes values to it each physics frame. Top-left = controls/binds
-## (set_readout); bottom-center = boost gauge.
+## of these and pushes values to it each physics frame. Top-center = scoreboard
+## (set_score); bottom-center = boost gauge. Controls live in the pause menu.
 
-# Controller-first; keyboard/mouse is the dimmed secondary line.
-const BINDS := "[color=aqua][b]Fly[/b][/color]     L-stick pitch + turn · [color=yellow]LB[/color] air-roll (RL) · LB/RB yaw (Pilot)\n" \
-	+ "[color=orange][b]Power[/b][/color]   B boost · X brake\n" \
-	+ "[color=lime][b]Camera[/b][/color]  R-stick aim · R3 free · Y ball / velocity\n" \
-	+ "[color=violet][b]System[/b][/color]  Start pause · Back reset · tuning/scheme in pause menu (T/C)\n" \
-	+ "[color=#888888]K&M  WASD + Q/E · Shift air-roll · Space/RMB/LMB · mouse aim · F/Y · T/C · R reset · Esc[/color]"
-
-var _pot_label: RichTextLabel
+var _score_label: Label
 var _boost_bar: ProgressBar
 var _boost_caption: Label
 
 
 func _ready() -> void:
-	_pot_label = RichTextLabel.new()
-	_pot_label.bbcode_enabled = true
-	_pot_label.fit_content = true
-	_pot_label.scroll_active = false
-	_pot_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_pot_label.position = Vector2(12, 8)
-	_pot_label.custom_minimum_size = Vector2(880, 0)
-	_pot_label.add_theme_font_size_override("normal_font_size", 22)
-	_pot_label.add_theme_font_size_override("bold_font_size", 22)
-	_pot_label.add_theme_stylebox_override("normal", _panel_bg())
-	add_child(_pot_label)
+	# Scoreboard, top-center.
+	_score_label = Label.new()
+	_score_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_score_label.offset_left = -200.0
+	_score_label.offset_right = 200.0
+	_score_label.offset_top = 12.0
+	_score_label.offset_bottom = 52.0
+	_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_score_label.add_theme_font_size_override("font_size", 28)
+	_score_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_score_label.add_theme_constant_override("outline_size", 8)
+	_score_label.add_theme_stylebox_override("normal", _panel_bg())
+	add_child(_score_label)
+	set_score(0, 0)
 
 	# Boost reserve meter, bottom-center.
 	_boost_bar = ProgressBar.new()
@@ -95,5 +91,8 @@ func set_boost(amount: float, max_amount: float) -> void:
 	_boost_bar.modulate = Color(1, 1, 1, 1) if amount > 0.01 else Color(1, 1, 1, 0.4)
 
 
-func set_readout() -> void:
-	_pot_label.text = BINDS
+## Update the top-center scoreboard.
+func set_score(blue: int, orange: int) -> void:
+	if not _score_label:
+		return
+	_score_label.text = "BLUE  %d  -  %d  ORANGE" % [blue, orange]

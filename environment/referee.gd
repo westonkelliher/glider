@@ -13,6 +13,7 @@ var _scoring := false    # guard against double-counting a lingering ball
 
 
 func _ready() -> void:
+	add_to_group("referee")
 	goal_north.body_entered.connect(_on_north_entered)
 	goal_south.body_entered.connect(_on_south_entered)
 	print("[referee] ready, monitoring goals")
@@ -41,9 +42,8 @@ func _reset_after_goal() -> void:
 	if ball:
 		ball.global_position = Vector3(0, 5, 0)
 		ball.velocity = Vector3.UP * 15.0 # TODO this 15.0 needs to be a variable cus it exists elsewhere
-	for glider in get_tree().get_nodes_in_group("glider"):
-		if glider.has_method("reset_to_spawn"):
-			glider.reset_to_spawn()
+	# Pick a fresh (mirrored) kickoff spawn for both teams.
+	MatchController.place_kickoff(get_tree())
 	_scoring = false
 	# Re-run the kickoff countdown (freezes the field for 3-2-1-GO).
 	var mc := get_tree().get_first_node_in_group("match_controller")

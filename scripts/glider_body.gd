@@ -77,6 +77,8 @@ var control_scheme := GliderInput.Scheme.RL
 var _menu: CanvasLayer
 var controller: RefCounted
 var _spawn_transform: Transform3D
+## +1 for the blue/player side (spawn z > 0), -1 for the orange/AI side.
+var side := 1
 
 
 ## Team tint — players fly blue, the AI flies orange (matching the goals).
@@ -88,6 +90,7 @@ const AI_COLOR := Color(0.85, 0.38, 0.08)
 func _ready() -> void:
 	tuning = _tunings[_tuning_idx]
 	_spawn_transform = global_transform
+	side = -1 if global_position.z < 0.0 else 1
 	add_to_group("glider")
 	_apply_team_color(AI_COLOR if is_ai else PLAYER_COLOR)
 	_boost_fx = _make_boost_fx()
@@ -338,6 +341,16 @@ func apply_impulse(impulse: Vector3) -> void:
 	_external_impulse += impulse
 
 
+## Move this glider's spawn point to a kickoff (x, z) given for the blue side;
+## the orange side (-Z) is mirrored. Only the position moves — the original
+## facing (basis) and spawn height are preserved. Call before reset_to_spawn().
+func set_kickoff_position(blue_xz: Vector2) -> void:
+	var origin := _spawn_transform.origin
+	origin.x = blue_xz.x * side
+	origin.z = blue_xz.y * side
+	_spawn_transform.origin = origin
+
+
 ## Restore the glider to its spawn pose and zero all motion/aileron state.
 ## Intended for the referee to call after a goal.
 func reset_to_spawn() -> void:
@@ -425,9 +438,14 @@ func set_wing_extension(ext: float) -> void:
 	$Mesh/Q/RWing.position.x = lerpf(0.12, 0.655, ext)
 
 
+var _referee: Node
+
+
 func update_hud() -> void:
 	if not _hud:
 		return
-	_hud.set_readout()
 	_hud.set_boost(boost_amount, BOOST_MAX)
-
+	if not is_instance_valid(_referee):
+		_referee = get_tree().get_first_node_in_group("referee")
+	if _referee:
+		_hud.set_score(_referee.score_blue, _referee.score_orange)
