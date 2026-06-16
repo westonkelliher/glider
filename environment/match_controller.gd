@@ -61,6 +61,23 @@ func kickoff() -> void:
 	_busy = false
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("reset"):
+		reset_match()
+
+
+## Back button / R: put the ball and gliders back to spawn and re-run kickoff.
+func reset_match() -> void:
+	var ball: Node = get_tree().get_first_node_in_group("ball")
+	if ball:
+		ball.global_position = Vector3(0, 5, 0)
+		ball.set("velocity", Vector3.UP * 15.0)
+	for g: Node in get_tree().get_nodes_in_group("glider"):
+		if g.has_method("reset_to_spawn"):
+			g.reset_to_spawn()
+	kickoff()
+
+
 func _set_frozen(frozen: bool) -> void:
 	for g: Node in get_tree().get_nodes_in_group("glider"):
 		g.set_physics_process(not frozen)

@@ -7,8 +7,8 @@ extends CanvasLayer
 const BINDS := "[color=aqua][b]Fly[/b][/color]     L-stick pitch + turn · [color=yellow]LB[/color] air-roll (RL) · LB/RB yaw (Pilot)\n" \
 	+ "[color=orange][b]Power[/b][/color]   A launch · B boost · X brake\n" \
 	+ "[color=lime][b]Camera[/b][/color]  R-stick aim · R3 free · Y ball / velocity\n" \
-	+ "[color=violet][b]Modes[/b][/color]   Back tuning · Start scheme\n" \
-	+ "[color=#888888]K&M  WASD + Q/E · Shift air-roll · Space/RMB/LMB · mouse aim · F/Y · T/C · Esc[/color]"
+	+ "[color=violet][b]System[/b][/color]  Start pause · Back reset · tuning/scheme in pause menu (T/C)\n" \
+	+ "[color=#888888]K&M  WASD + Q/E · Shift air-roll · Space/RMB/LMB · mouse aim · F/Y · T/C · R reset · Esc[/color]"
 
 var _pot_label: RichTextLabel
 var _stats_label: Label

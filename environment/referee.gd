@@ -40,7 +40,7 @@ func _reset_after_goal() -> void:
 	var ball := get_tree().get_first_node_in_group("ball")
 	if ball:
 		ball.global_position = Vector3(0, 5, 0)
-		ball.velocity = Vector3.UP * 24.0
+		ball.velocity = Vector3.UP * 15.0 # TODO this 15.0 needs to be a variable cus it exists elsewhere
 	for glider in get_tree().get_nodes_in_group("glider"):
 		if glider.has_method("reset_to_spawn"):
 			glider.reset_to_spawn()
