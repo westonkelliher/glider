@@ -80,7 +80,7 @@ var _boost_light: OmniLight3D
 @export var ai_variant := "base"
 ## World point this glider attacks. Default = BLUE goal (north, +Z).
 @export var target_goal := Vector3(0.0, 10.5, 143.5)
-var control_scheme := GliderInput.Scheme.RL
+var control_scheme := GliderInput.Scheme.PILOT
 var _menu: CanvasLayer
 var controller: RefCounted
 var _spawn_transform: Transform3D
