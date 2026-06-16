@@ -27,6 +27,33 @@ func _ready() -> void:
 
 	set_score(0, 0)
 
+	# Boost reserve meter, bottom-center.
+	_boost_bar = ProgressBar.new()
+	_boost_bar.show_percentage = false
+	_boost_bar.min_value = 0.0
+	_boost_bar.max_value = 1.0
+	_boost_bar.value = 1.0
+	_boost_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_boost_bar.offset_left = -140.0
+	_boost_bar.offset_right = 140.0
+	_boost_bar.offset_top = -52.0
+	_boost_bar.offset_bottom = -32.0
+	_boost_bar.add_theme_stylebox_override("background", _boost_bg())
+	_boost_bar.add_theme_stylebox_override("fill", _boost_fill())
+	add_child(_boost_bar)
+
+	_boost_caption = Label.new()
+	_boost_caption.text = "BOOST"
+	_boost_caption.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_boost_caption.offset_left = -140.0
+	_boost_caption.offset_right = 140.0
+	_boost_caption.offset_top = -74.0
+	_boost_caption.offset_bottom = -54.0
+	_boost_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boost_caption.add_theme_font_size_override("font_size", 14)
+	_boost_caption.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3))
+	add_child(_boost_caption)
+
 
 # One team's score box: a saturated team-colored panel with a big white number.
 func _make_score_box(team: Color, left_side: bool) -> Label:
@@ -64,33 +91,6 @@ func _score_box_bg(team: Color, left_side: bool) -> StyleBoxFlat:
 	sb.shadow_color = Color(0, 0, 0, 0.5)
 	sb.shadow_size = 6
 	return sb
-
-	# Boost reserve meter, bottom-center.
-	_boost_bar = ProgressBar.new()
-	_boost_bar.show_percentage = false
-	_boost_bar.min_value = 0.0
-	_boost_bar.max_value = 1.0
-	_boost_bar.value = 1.0
-	_boost_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_boost_bar.offset_left = -140.0
-	_boost_bar.offset_right = 140.0
-	_boost_bar.offset_top = -52.0
-	_boost_bar.offset_bottom = -32.0
-	_boost_bar.add_theme_stylebox_override("background", _boost_bg())
-	_boost_bar.add_theme_stylebox_override("fill", _boost_fill())
-	add_child(_boost_bar)
-
-	_boost_caption = Label.new()
-	_boost_caption.text = "BOOST"
-	_boost_caption.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_boost_caption.offset_left = -140.0
-	_boost_caption.offset_right = 140.0
-	_boost_caption.offset_top = -74.0
-	_boost_caption.offset_bottom = -54.0
-	_boost_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boost_caption.add_theme_font_size_override("font_size", 14)
-	_boost_caption.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3))
-	add_child(_boost_caption)
 
 
 func _boost_bg() -> StyleBoxFlat:
