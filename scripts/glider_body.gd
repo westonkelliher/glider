@@ -7,6 +7,8 @@ const PauseMenu := preload("res://scripts/pause_menu.gd")
 const G := 9.8
 const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
 const FLOOR_HEIGHT := 0.5
+const GROUND_DRIVE_SPEED := 14.0   # max ground speed (m/s) the throttle can build
+const GROUND_DRIVE_ACCEL := 18.0   # m/s^2 ground accel at full throttle
 const MAX_SPEED := 35.0
 
 ## Boost reserve: a limited tank that drains while boosting and refills only
@@ -347,6 +349,19 @@ func _physics_process(delta: float) -> void:
 		var fx_scale := AI_FX_SCALE if is_ai else 1.0
 		var target := ((2.4 + 0.5 * sin(_boost_idle * 60.0)) * fx_scale) if boosting else 0.0
 		_boost_light.light_energy = lerpf(_boost_light.light_energy, target, minf(1.0, delta * 18.0))
+
+	# Ground driving: while touching the floor, the right trigger accelerates the
+	# craft along its flattened nose direction up to a modest ground speed, so you
+	# can build a run-up before lifting off. The energy model (pot_height) tracks
+	# the gained speed on the following frame, same as boost.
+	if position.y <= FLOOR_HEIGHT + 0.05 and ctl.throttle > 0.0:
+		var ground_nose := Vector3(nose_dir.x, 0.0, nose_dir.z)
+		if ground_nose.length() > 0.01:
+			ground_nose = ground_nose.normalized()
+			var horiz_speed := Vector3(velocity.x, 0.0, velocity.z).length()
+			if horiz_speed < GROUND_DRIVE_SPEED:
+				var add := minf(GROUND_DRIVE_ACCEL * ctl.throttle * delta, GROUND_DRIVE_SPEED - horiz_speed)
+				velocity += ground_nose * add
 
 	var slow := ctl.slow
 	if slow > 0.0 and current_speed > 4.0:

@@ -62,4 +62,4 @@
 * [DONE] new kickoffs are too close to the ball
 * [DONE] reduce AI's boost visual effect compared to player
 * AI's boost force should be 70% as effective as player's
-* while touching ground, right trigger speeds player up (up to 14m/s)
+* [DONE] while touching ground, right trigger speeds player up (up to 14m/s)
