@@ -16,8 +16,8 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"Hold the RIGHT TRIGGER to extend your wings and glide.",
-		"With wings out, the craft follows where its nose points.",
+		"Hold the RIGHT TRIGGER to open your wings and glide.",
+		"With wings out, you go where your nose points.",
 		"Fly through all three rings.",
 	]
 

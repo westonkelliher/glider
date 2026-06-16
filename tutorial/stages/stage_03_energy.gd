@@ -17,9 +17,9 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"Altitude is speed in disguise.",
+		"Altitude turns into speed.",
 		"DIVE into the valley to trade height for speed.",
-		"Then use that speed to CLIMB through the high ring beyond.",
+		"Then use that speed to climb through the high ring.",
 	]
 
 
@@ -62,7 +62,7 @@ func update(_delta: float) -> void:
 	if not _dive_done:
 		if _speed >= DIVE_SPEED_TARGET:
 			_dive_done = true
-			ui.set_hint("Now pull up — that speed becomes altitude.")
+			ui.set_hint("Now pull up and turn that speed back into height.")
 		# Floor guard: only bites before the dive earns its speed.
 		elif glider.global_position.y < 4.0:
 			failed.emit("hit the ground before building speed")
@@ -78,6 +78,6 @@ func _on_high_gate_passed() -> void:
 
 func _update_objective() -> void:
 	if not _dive_done:
-		ui.set_objective("① Dive — reach %d m/s (now %d)" % [int(DIVE_SPEED_TARGET), int(_speed)])
+		ui.set_objective("① Dive to %d m/s (now %d)" % [int(DIVE_SPEED_TARGET), int(_speed)])
 	else:
 		ui.set_objective("② Climb through the high ring")

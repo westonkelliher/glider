@@ -32,7 +32,7 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"Pull the LEFT TRIGGER to brake hard — it bleeds off speed fast.",
+		"Pull the LEFT TRIGGER to brake hard. It kills your speed fast.",
 		"Fly into the box ahead, then brake to a near-stop.",
 		"Hold still inside the box to finish.",
 	]
@@ -83,7 +83,7 @@ func update(delta: float) -> void:
 	# Only bail if they sail well past the box still carrying speed (press R to
 	# retry); a gentle drift past is fine.
 	if glider.global_position.z < BOX_Z - _box_size.z and speed > STOP_SPEED:
-		failed.emit("overshot — brake earlier")
+		failed.emit("overshot, brake earlier")
 	elif glider.global_position.y < 2.0:
 		failed.emit("hit the ground")
 

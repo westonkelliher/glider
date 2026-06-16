@@ -35,12 +35,12 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"Two ways to move your nose. Learn them apart.",
-		"ROLL banks the wings around your nose — the horizon tilts,",
+		"ROLL and YAW move the craft in different ways.",
+		"ROLL spins you around your nose. The wings tip over,",
 		"but the nose keeps pointing the same way.",
-		"YAW swings the nose left or right while you stay level.",
-		"First BANK hard to feel the roll. Then LEVEL out and YAW",
-		"the nose around to fly through the side ring.",
+		"YAW swings the nose left or right.",
+		"Roll hard to feel it. Then level the wings and yaw",
+		"the nose over to the side ring and fly through.",
 	]
 
 
@@ -71,7 +71,7 @@ func on_begin() -> void:
 	var nose: Vector3 = -glider.global_transform.basis.z.normalized()
 	glider.velocity = nose * SPEED
 	glider.pot_height = glider.global_position.y + SPEED * SPEED / (2.0 * Glider.G)
-	ui.set_hint("ROLL: tilt the stick to bank your wings. Watch the horizon tip.")
+	ui.set_hint("Roll: tilt the stick. The craft spins around its nose.")
 
 
 func update(_delta: float) -> void:
@@ -84,13 +84,13 @@ func update(_delta: float) -> void:
 		Phase.ROLL:
 			if bank >= ROLL_TARGET_DEG:
 				_phase = Phase.LEVEL
-				ui.set_hint("Good bank! Now LEVEL the wings out (horizon flat).")
+				ui.set_hint("Good roll! Now level the wings out.")
 				_update_objective()
 		Phase.LEVEL:
 			if bank <= LEVEL_DEG:
 				_phase = Phase.YAW
 				_goal.set_color(Color(0.25, 0.8, 1.0))
-				ui.set_hint("YAW: swing the nose toward the side ring and fly through it.")
+				ui.set_hint("Yaw: swing the nose to the side ring and fly through.")
 				_update_objective()
 		Phase.YAW:
 			if _passed:
@@ -111,7 +111,7 @@ func _on_goal_passed() -> void:
 func _update_objective() -> void:
 	match _phase:
 		Phase.ROLL:
-			ui.set_objective("1. BANK past %d°  (roll the wings)" % int(ROLL_TARGET_DEG))
+			ui.set_objective("1. ROLL past %d°" % int(ROLL_TARGET_DEG))
 		Phase.LEVEL:
 			ui.set_objective("2. LEVEL the wings  (under %d°)" % int(LEVEL_DEG))
 		Phase.YAW:

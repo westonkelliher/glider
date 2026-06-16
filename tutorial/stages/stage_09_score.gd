@@ -26,7 +26,7 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"The big finish — put it all together.",
+		"Last one. Put it all together.",
 		"Dive for speed, line up with ball-cam, and smash it into the goal.",
 	]
 

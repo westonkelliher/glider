@@ -19,7 +19,7 @@ func intro_lines() -> Array[String]:
 	return [
 		"Tilt the stick to pitch, roll, and yaw your craft.",
 		"Bank into each turn to line up with the next ring.",
-		"Carve the S-bend through all the gates.",
+		"Weave the S-bend through all the gates.",
 	]
 
 

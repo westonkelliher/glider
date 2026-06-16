@@ -22,12 +22,12 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"The RIGHT TRIGGER is your main control. Hold it = wings out = GRIP.",
-		"Let it GO and the handbrake bites: wings retract and you DRIFT,",
-		"sliding with your momentum while the nose snaps around fast.",
-		"RELEASE the right trigger mid-turn to drift the nose around,",
-		"then squeeze it again to launch out.",
-		"Round the pylon through this tight hairpin and hit the exit ring.",
+		"The RIGHT TRIGGER is your main control. Hold it for wings out, GRIP.",
+		"Let it go and the wings retract. Now you DRIFT,",
+		"sliding along your momentum while the nose swings around fast.",
+		"Let go of the right trigger mid-turn to swing the nose around,",
+		"then squeeze it again to shoot out.",
+		"Round the pylon through the tight hairpin and hit the exit ring.",
 	]
 
 
@@ -75,7 +75,7 @@ func on_begin() -> void:
 	var nose: Vector3 = -glider.global_transform.basis.z.normalized()
 	glider.velocity = nose * SPEED
 	glider.pot_height = glider.global_position.y + SPEED * SPEED / (2.0 * Glider.G)
-	ui.set_hint("Hold trigger to grip in. LET GO mid-turn to drift the nose around, then squeeze to shoot out.")
+	ui.set_hint("Hold trigger to grip. Let go mid-turn to swing the nose around, then squeeze to shoot out.")
 
 
 func update(_delta: float) -> void:

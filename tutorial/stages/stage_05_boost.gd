@@ -41,10 +41,10 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"BOOST (hold it) fires your thrusters — but the tank is limited.",
-		"The rings climb uphill; you start slow and can't coast up.",
-		"Hit BOOST to build speed, then ride that momentum over the top.",
-		"Watch the boost meter — it's just enough for one good burst.",
+		"Hold BOOST to fire your thrusters. The tank runs out.",
+		"The rings climb uphill and you start slow, so you can't coast up.",
+		"Boost to build speed, then ride it over the top.",
+		"Watch the boost meter. You get about one good burst.",
 	]
 
 
@@ -91,7 +91,7 @@ func update(_delta: float) -> void:
 		return
 	var speed: float = glider.velocity.length()
 	if speed < SLOW_SPEED and not Input.is_action_pressed("boost"):
-		ui.set_hint("Speed's dropping — BOOST!")
+		ui.set_hint("Speed's dropping. Boost!")
 	else:
 		ui.set_hint("Carry your speed up and through the rings.")
 
@@ -109,4 +109,4 @@ func _on_finish_reached() -> void:
 
 
 func _update_objective() -> void:
-	ui.set_objective("Gates: %d / %d  —  reach the finish, hold BOOST" % [_passed, _gates.size()])
+	ui.set_objective("Gates: %d / %d.  Reach the finish, hold BOOST" % [_passed, _gates.size()])

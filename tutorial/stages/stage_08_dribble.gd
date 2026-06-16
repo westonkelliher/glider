@@ -27,7 +27,7 @@ func stage_title() -> String:
 func intro_lines() -> Array[String]:
 	return [
 		"Now move the ball with control.",
-		"Approach gently and nudge it — a full-speed smash will overshoot.",
+		"Come in slow and nudge it. A full-speed smash overshoots.",
 		"Dribble the ball into the green ring.",
 	]
 

@@ -26,9 +26,9 @@ func stage_title() -> String:
 
 func intro_lines() -> Array[String]:
 	return [
-		"Meet the ball. To play, you need to keep your eye on it.",
-		"Press Y (▲) to lock the camera onto the ball — press again to release.",
-		"Engage ball-cam and keep it on while you fly around the ball.",
+		"Here's the ball. To play, you have to keep your eye on it.",
+		"Press Y (▲) to lock the camera onto the ball. Press again to release.",
+		"Turn on ball-cam and keep it on while you fly around the ball.",
 	]
 
 
@@ -64,11 +64,11 @@ func update(delta: float) -> void:
 		_engaged = true
 		_hold += delta
 		var left: float = maxf(0.0, HOLD_NEEDED - _hold)
-		ui.set_objective("Ball-cam locked — keep flying (%.1fs)" % left)
-		ui.set_hint("Notice the camera keeps the ball in view as you turn.")
+		ui.set_objective("Ball-cam locked, keep flying (%.1fs)" % left)
+		ui.set_hint("The camera keeps the ball in view as you turn.")
 		if _hold >= HOLD_NEEDED:
 			completed.emit()
 	else:
 		if _engaged:
-			ui.set_hint("Ball-cam off — press Y (▲) to re-engage.")
+			ui.set_hint("Ball-cam off. Press Y (▲) to turn it back on.")
 		ui.set_objective("Press Y (▲) to lock the camera onto the ball.")
