@@ -61,6 +61,27 @@ def _load_genome(path):
     return g if len(g) == E.N else None
 
 
+def _minmax(xs):
+    """Normalize a list to [0,1] across its own range; flat list -> all 0.5."""
+    lo, hi = min(xs), max(xs)
+    rng = hi - lo
+    return [0.5 if rng == 0 else (x - lo) / rng for x in xs]
+
+
+def _pick_champion(finalists, val_reps, val_seeds, dot_frames, dot_weight):
+    """Pick the survivor that best balances SUCCESS and DOT at full difficulty.
+    The two scales are incomparable, so min-max each across the survivor pool and
+    take a weighted blend. dot_weight=0 reproduces the old success-only pick."""
+    s = E.eval_pop(finalists, "train", val_reps, val_seeds, "success", dot_frames, tag="fin_s")
+    d = E.eval_pop(finalists, "train", val_reps, val_seeds, "dot", dot_frames, tag="fin_d")
+    ns, nd = _minmax(s), _minmax(d)
+    blend = [(1.0 - dot_weight) * a + dot_weight * b for a, b in zip(ns, nd)]
+    i = max(range(len(finalists)), key=lambda k: blend[k])
+    print("[ga] champion pick: success=%.0f dot=%.0f (blend=%.2f, dot_w=%.2f, of %d survivors)"
+          % (s[i], d[i], blend[i], dot_weight, len(finalists)), flush=True)
+    return finalists[i]
+
+
 def _log_result(row):
     new = not os.path.exists(RESULTS_CSV)
     with open(RESULTS_CSV, "a", newline="") as fh:
@@ -91,6 +112,7 @@ def main():
 
     val_reps = int(os.environ.get("VAL_REPS", "50"))
     val_seeds = _ints("VAL_SEEDS", "1,2,3,4,5")
+    dot_weight = float(os.environ.get("DOT_WEIGHT", "0.4"))   # 0=success-only champ pick
 
     zero = [0.0] * E.N
     seed_from = os.environ.get("SEED_FROM", "")
@@ -115,11 +137,9 @@ def main():
         sigma_floor=sigma_floor, start_metric=start_metric, label="alt",
         n_stages=n_stages, jitter=train_jitter)
 
-    # ---- Pick champion: best of the final survivors at FULL difficulty -------
+    # ---- Pick champion: survivor that best blends SUCCESS + DOT (full diff) ---
     finalists = [g for _, g in parents]
-    ffits = E.eval_pop(finalists, "train", val_reps, val_seeds, "success",
-                       dot_frames, tag="finals")
-    champ = max(zip(ffits, finalists), key=lambda x: x[0])[1]
+    champ = _pick_champion(finalists, val_reps, val_seeds, dot_frames, dot_weight)
     E._save_champion(champ)
     shutil.copyfile(os.path.join(E.ROOT, ".ga", "champion.json"), PLAY_WEIGHTS)
     print("[ga] promoted champion -> %s (F5 now uses it)" % PLAY_WEIGHTS, flush=True)
