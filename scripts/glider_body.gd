@@ -166,7 +166,7 @@ func _physics_process(delta: float) -> void:
 	## momentum. Smooth toward the target so the discrete X button (snaps 0->1)
 	## doesn't jolt; the analog trigger already varies smoothly.
 	var target_friction := lerpf(1.0, 0.08, ctl.hand_brake)
-	air_friction = move_toward(air_friction, target_friction, 200.0 * delta)
+	air_friction = move_toward(air_friction, target_friction, 3.0 * delta)
 	pull_in_wings(ctl.hand_brake)
 	#
 	## current values
