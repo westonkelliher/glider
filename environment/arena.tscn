@@ -67,6 +67,37 @@ size = Vector3(3, 36, 30)
 [sub_resource type="BoxShape3D" id="shape_goal_roof"]
 size = Vector3(80, 3, 30)
 
+; --- ceiling + filleted corners (no 90° edges, rocket-league style) ---
+[sub_resource type="BoxMesh" id="mesh_ceiling"]
+material = SubResource("wall_mat")
+size = Vector3(240, 3, 400)
+
+[sub_resource type="BoxShape3D" id="shape_ceiling"]
+size = Vector3(240, 3, 400)
+
+; chamfer box rotated 45°; a square cross-section presents a diagonal ramp to the
+; interior whichever way it spins, so only the origin needs to land on the edge.
+[sub_resource type="BoxMesh" id="mesh_ch_ew"]
+material = SubResource("wall_mat")
+size = Vector3(20, 20, 400)
+
+[sub_resource type="BoxShape3D" id="shape_ch_ew"]
+size = Vector3(20, 20, 400)
+
+[sub_resource type="BoxMesh" id="mesh_ch_ns"]
+material = SubResource("wall_mat")
+size = Vector3(80, 20, 20)
+
+[sub_resource type="BoxShape3D" id="shape_ch_ns"]
+size = Vector3(80, 20, 20)
+
+[sub_resource type="BoxMesh" id="mesh_ch_v"]
+material = SubResource("wall_mat")
+size = Vector3(20, 70, 20)
+
+[sub_resource type="BoxShape3D" id="shape_ch_v"]
+size = Vector3(20, 70, 20)
+
 [node name="Arena" type="StaticBody3D"]
 script = ExtResource("1_ref")
 
@@ -219,3 +250,91 @@ surface_material_override/0 = SubResource("goal_orange_mat")
 
 [node name="Shape" type="CollisionShape3D" parent="GoalSouth"]
 shape = SubResource("shape_goal")
+
+[node name="Ceiling" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 70, 0)
+mesh = SubResource("mesh_ceiling")
+
+[node name="CeilingShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 70, 0)
+shape = SubResource("shape_ceiling")
+
+[node name="ChamferFloorEast" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0, 0, 0, 1, 118.5, 0, 0)
+mesh = SubResource("mesh_ch_ew")
+
+[node name="ChamferFloorEastShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0, 0, 0, 1, 118.5, 0, 0)
+shape = SubResource("shape_ch_ew")
+
+[node name="ChamferFloorWest" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0, 0, 0, 1, -118.5, 0, 0)
+mesh = SubResource("mesh_ch_ew")
+
+[node name="ChamferFloorWestShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 0, 0, 0, 1, -118.5, 0, 0)
+shape = SubResource("shape_ch_ew")
+
+[node name="ChamferFloorNL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, -80, 0, 198.5)
+mesh = SubResource("mesh_ch_ns")
+
+[node name="ChamferFloorNLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, -80, 0, 198.5)
+shape = SubResource("shape_ch_ns")
+
+[node name="ChamferFloorNR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 80, 0, 198.5)
+mesh = SubResource("mesh_ch_ns")
+
+[node name="ChamferFloorNRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 80, 0, 198.5)
+shape = SubResource("shape_ch_ns")
+
+[node name="ChamferFloorSL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, -80, 0, -198.5)
+mesh = SubResource("mesh_ch_ns")
+
+[node name="ChamferFloorSLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, -80, 0, -198.5)
+shape = SubResource("shape_ch_ns")
+
+[node name="ChamferFloorSR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 80, 0, -198.5)
+mesh = SubResource("mesh_ch_ns")
+
+[node name="ChamferFloorSRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 80, 0, -198.5)
+shape = SubResource("shape_ch_ns")
+
+[node name="ChamferCornerNE" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, 118.5, 35, 198.5)
+mesh = SubResource("mesh_ch_v")
+
+[node name="ChamferCornerNEShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, 118.5, 35, 198.5)
+shape = SubResource("shape_ch_v")
+
+[node name="ChamferCornerNW" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, -118.5, 35, 198.5)
+mesh = SubResource("mesh_ch_v")
+
+[node name="ChamferCornerNWShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, -118.5, 35, 198.5)
+shape = SubResource("shape_ch_v")
+
+[node name="ChamferCornerSE" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, 118.5, 35, -198.5)
+mesh = SubResource("mesh_ch_v")
+
+[node name="ChamferCornerSEShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, 118.5, 35, -198.5)
+shape = SubResource("shape_ch_v")
+
+[node name="ChamferCornerSW" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, -118.5, 35, -198.5)
+mesh = SubResource("mesh_ch_v")
+
+[node name="ChamferCornerSWShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.7071068, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071068, -118.5, 35, -198.5)
+shape = SubResource("shape_ch_v")
