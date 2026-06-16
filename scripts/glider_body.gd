@@ -15,6 +15,8 @@ const BOOST_MAX := 100.0
 const BOOST_DRAIN := 45.0          # units/sec while boosting (~2.2s of full tank)
 const BOOST_RECHARGE := 22.0       # units/sec once recharging
 const BOOST_RECHARGE_DELAY := 8.0  # sec of no boosting before the tank refills
+const BOOST_FORCE := 50.0           # nose-ward accel while boosting (player)
+const AI_BOOST_FORCE := 34.0        # softer accel for the AI (see AI boost below)
 
 
 ## Flight tuning — PRIMARY/SECONDARY presets, toggled live with T or the pause menu.
@@ -65,6 +67,8 @@ var _boost_idle := BOOST_RECHARGE_DELAY
 var _boost_locked := false
 ## Exhaust flame, emitting only while boosting (created for every glider).
 var _boost_fx: CPUParticles3D
+## Warm point light pulsing at the tail while boosting (sells the glow).
+var _boost_light: OmniLight3D
 
 
 ## Controls.
@@ -95,6 +99,8 @@ func _ready() -> void:
 	_apply_team_color(AI_COLOR if is_ai else PLAYER_COLOR)
 	_boost_fx = _make_boost_fx()
 	add_child(_boost_fx)
+	_boost_light = _make_boost_light()
+	add_child(_boost_light)
 	if is_ai:
 		controller = _make_ai_controller()
 	else:
@@ -113,37 +119,67 @@ func _make_boost_fx() -> CPUParticles3D:
 	var fx := CPUParticles3D.new()
 	fx.emitting = false
 	fx.local_coords = false
-	fx.amount = 40
-	fx.lifetime = 0.4
+	fx.amount = 140
+	fx.lifetime = 0.5
 	fx.position = Vector3(0.0, 0.05, 0.7)
+	# Seed the jet from a small disc across the exhaust so it reads as a column,
+	# not a single point.
+	fx.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	fx.emission_sphere_radius = 0.12
 	fx.direction = Vector3(0.0, 0.0, 1.0)
-	fx.spread = 16.0
-	fx.initial_velocity_min = 7.0
-	fx.initial_velocity_max = 11.0
+	fx.spread = 11.0
+	fx.initial_velocity_min = 11.0
+	fx.initial_velocity_max = 18.0
 	fx.gravity = Vector3.ZERO
-	fx.scale_amount_min = 0.5
-	fx.scale_amount_max = 0.9
-	var shrink := Curve.new()
-	shrink.add_point(Vector2(0.0, 1.0))
-	shrink.add_point(Vector2(1.0, 0.0))
-	fx.scale_amount_curve = shrink
+	# A touch of drag so the tail decelerates and bunches into a soft smoke puff.
+	fx.damping_min = 6.0
+	fx.damping_max = 10.0
+	fx.scale_amount_min = 0.6
+	fx.scale_amount_max = 1.1
+	# Grow slightly off the nozzle, then taper to nothing as it cools.
+	var taper := Curve.new()
+	taper.add_point(Vector2(0.0, 0.55))
+	taper.add_point(Vector2(0.18, 1.0))
+	taper.add_point(Vector2(1.0, 0.0))
+	fx.scale_amount_curve = taper
+	# White-yellow core -> orange -> red -> dark smoke fade.
 	var grad := Gradient.new()
-	grad.set_color(0, Color(1.0, 0.85, 0.4, 1.0))   # hot core
-	grad.set_color(1, Color(1.0, 0.25, 0.0, 0.0))   # fades to dim red
+	grad.offsets = PackedFloat32Array([0.0, 0.25, 0.6, 1.0])
+	grad.colors = PackedColorArray([
+		Color(1.0, 1.0, 0.92, 1.0),   # white-hot core
+		Color(1.0, 0.78, 0.25, 1.0),  # yellow
+		Color(1.0, 0.30, 0.04, 0.7),  # orange-red
+		Color(0.25, 0.10, 0.08, 0.0), # smoke fade-out
+	])
 	fx.color_ramp = grad
 	var ball := SphereMesh.new()
-	ball.radius = 0.13
-	ball.height = 0.26
+	ball.radius = 0.14
+	ball.height = 0.28
 	ball.radial_segments = 6
 	ball.rings = 3
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.vertex_color_use_as_albedo = true
+	# Additive billboards give the overlapping particles a bloomy glow.
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.disable_receive_shadows = true
 	ball.material = mat
 	fx.mesh = ball
 	return fx
+
+
+## Warm omni light parented at the tail, lit only while boosting so the exhaust
+## casts a believable glow on the craft and nearby surfaces.
+func _make_boost_light() -> OmniLight3D:
+	var light := OmniLight3D.new()
+	light.position = Vector3(0.0, 0.05, 0.85)
+	light.light_color = Color(1.0, 0.55, 0.18)
+	light.light_energy = 0.0          # off until boosting (set in toggle)
+	light.omni_range = 3.5
+	light.shadow_enabled = false
+	return light
 
 
 ## Paint the body in the team color with a Rocket-League-ish metallic finish.
@@ -285,19 +321,27 @@ func _physics_process(delta: float) -> void:
 	# Releasing the button clears the empty-tank lock so the next press can boost.
 	if not ctl.boost:
 		_boost_locked = false
-	var boosting := ctl.boost and boost_amount > 0.0 and not _boost_locked
+	# The AI gets unlimited but softer boost: boost-tank management is hard to
+	# train, so the AI never runs dry and just thrusts a bit weaker than the
+	# player. The player still drains a finite, lockable reserve.
+	var boosting := ctl.boost if is_ai else (ctl.boost and boost_amount > 0.0 and not _boost_locked)
 	if boosting:
-		velocity += nose_dir * 50.0 * delta
-		boost_amount = maxf(0.0, boost_amount - BOOST_DRAIN * delta)
-		_boost_idle = 0.0
-		if boost_amount <= 0.0:
-			_boost_locked = true  # drained while held; require a release to re-fire
+		velocity += nose_dir * (AI_BOOST_FORCE if is_ai else BOOST_FORCE) * delta
+		if not is_ai:
+			boost_amount = maxf(0.0, boost_amount - BOOST_DRAIN * delta)
+			_boost_idle = 0.0
+			if boost_amount <= 0.0:
+				_boost_locked = true  # drained while held; require a release to re-fire
 	else:
 		_boost_idle += delta
 		if _boost_idle >= BOOST_RECHARGE_DELAY:
 			boost_amount = minf(BOOST_MAX, boost_amount + BOOST_RECHARGE * delta)
 	if _boost_fx:
 		_boost_fx.emitting = boosting
+	if _boost_light:
+		# Flicker the glow a little so the exhaust feels alive while boosting.
+		var target := (2.4 + 0.5 * sin(_boost_idle * 60.0)) if boosting else 0.0
+		_boost_light.light_energy = lerpf(_boost_light.light_energy, target, minf(1.0, delta * 18.0))
 
 	var slow := ctl.slow
 	if slow > 0.0 and current_speed > 4.0:

@@ -9,6 +9,7 @@ const GLIDER_DISPLAY_SCALE: float = 2.5
 ## Ordered stage scripts. Add new stages here.
 const STAGE_PATHS: Array[String] = [
 	"res://tutorial/stages/stage_01_grip.gd",
+	"res://tutorial/stages/stage_02_roll_yaw.gd",
 	"res://tutorial/stages/stage_02_steer.gd",
 	"res://tutorial/stages/stage_03_energy.gd",
 	"res://tutorial/stages/stage_04_drift.gd",

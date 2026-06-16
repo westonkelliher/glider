@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://co2dvg8udnvto"]
+[gd_scene load_steps=30 format=3 uid="uid://co2dvg8udnvto"]
 
 [ext_resource type="Script" path="res://environment/referee.gd" id="1_ref"]
 
@@ -18,6 +18,29 @@ albedo_color = Color(0.2, 0.5, 1, 0.45)
 [sub_resource type="StandardMaterial3D" id="goal_orange_mat"]
 transparency = 1
 albedo_color = Color(1, 0.5, 0.15, 0.45)
+
+; --- goal-line markers: bright unshaded strips on the floor at each mouth plane ---
+[sub_resource type="StandardMaterial3D" id="line_blue_mat"]
+shading_mode = 0
+albedo_color = Color(0.3, 0.6, 1, 1)
+emission_enabled = true
+emission = Color(0.3, 0.6, 1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="StandardMaterial3D" id="line_orange_mat"]
+shading_mode = 0
+albedo_color = Color(1, 0.55, 0.15, 1)
+emission_enabled = true
+emission = Color(1, 0.55, 0.15, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="BoxMesh" id="mesh_line_north"]
+material = SubResource("line_blue_mat")
+size = Vector3(80, 0.1, 0.5)
+
+[sub_resource type="BoxMesh" id="mesh_line_south"]
+material = SubResource("line_orange_mat")
+size = Vector3(80, 0.1, 0.5)
 
 [sub_resource type="BoxMesh" id="mesh_side"]
 material = SubResource("wall_mat")
@@ -57,6 +80,11 @@ size = Vector3(80, 34, 3)
 
 [sub_resource type="BoxShape3D" id="shape_goal"]
 size = Vector3(80, 36, 30)
+
+; recessed goal-trigger shape: depth 24, sits behind the mouth so the ball must
+; fully cross the goal line (mouth plane) before the Area3D fires.
+[sub_resource type="BoxShape3D" id="shape_goal_trigger"]
+size = Vector3(80, 36, 24)
 
 [sub_resource type="BoxShape3D" id="shape_goal_back"]
 size = Vector3(80, 36, 3)
@@ -238,7 +266,8 @@ mesh = SubResource("mesh_goal")
 surface_material_override/0 = SubResource("goal_blue_mat")
 
 [node name="Shape" type="CollisionShape3D" parent="GoalNorth"]
-shape = SubResource("shape_goal")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+shape = SubResource("shape_goal_trigger")
 
 [node name="GoalSouth" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, -215)
@@ -249,7 +278,16 @@ mesh = SubResource("mesh_goal")
 surface_material_override/0 = SubResource("goal_orange_mat")
 
 [node name="Shape" type="CollisionShape3D" parent="GoalSouth"]
-shape = SubResource("shape_goal")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
+shape = SubResource("shape_goal_trigger")
+
+[node name="GoalLineNorth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 200)
+mesh = SubResource("mesh_line_north")
+
+[node name="GoalLineSouth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, -200)
+mesh = SubResource("mesh_line_south")
 
 [node name="Ceiling" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 71.5, 0)
