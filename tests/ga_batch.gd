@@ -14,7 +14,12 @@ const GLIDER := preload("res://scenes/glider_body.tscn")
 const BALL := preload("res://ball.tscn")
 const ARENA := preload("res://environment/arena.tscn")
 const Scenarios := preload("res://tests/scenarios.gd")
-const NORTH := Vector3(0.0, 15.0, 205.0)
+const NORTH := Vector3(0.0, 10.5, 143.5)
+# main.tscn scales the whole arena by this; the craft/ball keep full size. We
+# replicate that here: scale the referee arena AND every spawn position so the
+# training world matches the game's geometry. Velocities/speeds are NOT scaled
+# (physics + craft size are unchanged), only the arena layout.
+const SCALE := 0.7
 const G_GLIDER := 9.8
 const FRAC := 0.07
 const POS_FLOOR := 2.0
@@ -62,6 +67,7 @@ const POS_D_THRESH := 26.0   # position-kind: AND dist to ball <= this
 func _ready() -> void:
 	_parse_args()
 	referee = ARENA.instantiate()
+	referee.scale = Vector3(SCALE, SCALE, SCALE)
 	add_child(referee)
 	ball = BALL.instantiate()
 	ball.scale = Vector3(1.35, 1.35, 1.35)
@@ -121,7 +127,7 @@ func _start_seed() -> void:
 
 func _setup_rep() -> void:
 	var s: Dictionary = scenarios[si]
-	var bpos: Vector3 = _jvec(s["b_pos"], POS_FLOOR)
+	var bpos: Vector3 = _jvec(s["b_pos"] * SCALE, POS_FLOOR)
 	# EASY = slower ball: scale the base velocity by difficulty before jitter.
 	var bvel: Vector3 = _jvec(s["b_vel"] * lerpf(EASY_VEL, 1.0, difficulty), VEL_FLOOR)
 	ball.global_position = bpos
@@ -129,7 +135,7 @@ func _setup_rep() -> void:
 	ball.last_position = bpos
 	ball.last_velocity = bvel
 
-	var gpos: Vector3 = _jvec(s["g_pos"], POS_FLOOR)
+	var gpos: Vector3 = _jvec(s["g_pos"] * SCALE, POS_FLOOR)
 	var face: Vector3 = bpos - gpos
 	if face.length() < 0.01:
 		face = Vector3(0, 0, 1)
@@ -186,7 +192,7 @@ func _physics_process(_d: float) -> void:
 				reward_sum += ball.velocity.dot(to_goal.normalized())
 	elif s["kind"] == "position":
 		var b_thresh: float = float(s.get("b_thresh", POS_B_THRESH))
-		var d_thresh: float = float(s.get("d_thresh", POS_D_THRESH))
+		var d_thresh: float = float(s.get("d_thresh", POS_D_THRESH)) * SCALE
 		# EASY = more time to settle behind the ball.
 		var budget: int = int(float(s.get("frames", SHOT_FRAMES)) * lerpf(EASY_TIME, 1.0, difficulty))
 		if _positioned(b_thresh, d_thresh):

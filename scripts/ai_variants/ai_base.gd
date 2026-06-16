@@ -82,11 +82,11 @@ func _compute_aim(_glider: Glider, ball: Node3D, ctx: Dictionary) -> Vector3:
 	var behindness: float = ctx["behindness"]
 	var dist: float = ctx["dist"]
 	var aim: Vector3
-	if behindness > 0.55 and dist < 30.0:
-		aim = bp + shoot_dir * 25.0   # committed: drive through the ball toward goal
+	if behindness > 0.55 and dist < 21.0:
+		aim = bp + shoot_dir * 17.5   # committed: drive through the ball toward goal
 		aim.y = bp.y
 	else:
-		aim = bp - shoot_dir * 12.0   # reposition behind the ball
+		aim = bp - shoot_dir * 8.4   # reposition behind the ball
 		aim.y = bp.y - 1.0
 	return aim
 
@@ -124,7 +124,7 @@ static func upright_roll(glider: Glider, targets: Vector3) -> Vector3:
 func _decide_boost(glider: Glider, _ball: Node3D, ctx: Dictionary, aim: Vector3) -> bool:
 	var desired: Vector3 = aim - glider.global_position
 	var facing: float = ctx["nose"].dot(desired.normalized())
-	var slow_or_far: bool = ctx["speed"] < 26.0 or desired.length() > 40.0
+	var slow_or_far: bool = ctx["speed"] < 26.0 or desired.length() > 28.0
 	return slow_or_far and facing > 0.3
 
 

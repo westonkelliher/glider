@@ -18,11 +18,11 @@ extends AiBase
 ## stays orientation-relative): direction & distance to ball / own goal / other
 ## goal / opponent, ball velocity, own speed/altitude/energy, alignment, etc.
 
-const TWO_GOAL_Z := 205.0   # |z| of either goal (own goal mirrors target_goal.z)
+const TWO_GOAL_Z := 143.5   # |z| of either goal (own goal mirrors target_goal.z)
 
 # Scales that map raw world quantities into a roughly [-1,1] feature range so
 # every weight is comparable in magnitude regardless of the unit it multiplies.
-const POS_SCALE := 1.0 / 50.0
+const POS_SCALE := 1.0 / 35.0   # arena shrank 0.7x: keep normalized distances in range
 const VEL_SCALE := 1.0 / 20.0
 
 # ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 
 	var facing: float = ctx["nose"].dot(desired.normalized()) if desired.length() > 0.01 else 0.0
 	var boost_det: float = 0.0
-	if facing > 0.2 and (ctx["speed"] < 26.0 or desired.length() > 40.0):
+	if facing > 0.2 and (ctx["speed"] < 26.0 or desired.length() > 28.0):
 		boost_det = 0.6
 	ctl.boost = (boost_det + res[10]) > 0.5 and facing > 0.1
 	ctl.slow = clampf(0.0 + res[11], 0.0, 1.0)
@@ -240,12 +240,12 @@ func _features(glider: Glider, _ball: Node3D, ctx: Dictionary) -> Dictionary:
 		"ball_speed_n": clampf(ctx["ball_vel"].length() * VEL_SCALE, 0.0, 2.0),
 		# scalars
 		"behind": clampf(ctx["behindness"], -1.0, 1.0),
-		"near": smoothstep(40.0, 12.0, ctx["dist"]),
+		"near": smoothstep(28.0, 8.4, ctx["dist"]),
 		"align": clampf(ctx["nose"].dot(_norm(glider.velocity)), -1.0, 1.0),
 		"speed_n": clampf(ctx["speed"] * VEL_SCALE, 0.0, 2.0),
 		"alt_n": clampf(gp.y * POS_SCALE, 0.0, 2.0),
 		"energy_n": clampf((gp.y - bp.y) * POS_SCALE, -2.0, 2.0),
-		"ball_wide": clampf(absf(bp.x) / 40.0, 0.0, 2.0),
+		"ball_wide": clampf(absf(bp.x) / 28.0, 0.0, 2.0),
 		"ball_depth": clampf(bp.z * to_own_z * POS_SCALE, -2.0, 2.0),  # >0: ball in our half
 		"ball_closing": clampf(ctx["ball_vel"].z * to_own_z * VEL_SCALE, -2.0, 2.0),
 	}
@@ -282,16 +282,16 @@ func _aim(glider: Glider, ctx: Dictionary, dec: Dictionary) -> Vector3:
 	var pred: Vector3 = bp + ball_vel * t
 
 	# Candidate waypoints (mirrors of the old variants' aims).
-	var behind: Vector3 = pred - shoot_dir * 12.0; behind.y = pred.y - 1.0
-	var commit: Vector3 = pred + shoot_dir * 25.0; commit.y = pred.y
+	var behind: Vector3 = pred - shoot_dir * 8.4; behind.y = pred.y - 1.0
+	var commit: Vector3 = pred + shoot_dir * 17.5; commit.y = pred.y
 	var to_center: Vector3 = _norm(Vector3(-bp.x, 0.0, ctx["goal"].z - bp.z))
 	if to_center == Vector3.ZERO:
 		to_center = shoot_dir
-	var center: Vector3 = pred + to_center * 26.0; center.y = pred.y
+	var center: Vector3 = pred + to_center * 18.2; center.y = pred.y
 	var clear_dir: Vector3 = _norm(Vector3(own_goal.x - bp.x, 0.0, own_goal.z - bp.z))
-	var defend: Vector3 = bp - clear_dir * 14.0; defend.y = bp.y - 1.0   # stage goal-side, punt away
-	var climb: Vector3 = bp - shoot_dir * 8.0; climb.y = bp.y + 40.0
-	var recover: Vector3 = behind; recover.y = maxf(behind.y, ctx["gp"].y + 28.0)
+	var defend: Vector3 = bp - clear_dir * 9.8; defend.y = bp.y - 1.0   # stage goal-side, punt away
+	var climb: Vector3 = bp - shoot_dir * 5.6; climb.y = bp.y + 28.0
+	var recover: Vector3 = behind; recover.y = maxf(behind.y, ctx["gp"].y + 19.6)
 
 	# Priority-weighted blend (+ a small always-on attack term so there is always
 	# a target). Weights sum in the denominator -> a true convex combination.
