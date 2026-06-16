@@ -361,9 +361,9 @@ static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, 
 
 
 func set_wing_extension(ext: float) -> void:
-	# ext in [0,1]: 1 = wings fully out, 0 = fully retracted.
-	$Mesh/Q/LWing.position.x = lerpf(-0.4, -0.655, ext)
-	$Mesh/Q/RWing.position.x = lerpf(0.4, 0.655, ext)
+	# ext in [0,1]: 1 = wings fully out (unchanged), 0 = pulled in to the body.
+	$Mesh/Q/LWing.position.x = lerpf(-0.12, -0.655, ext)
+	$Mesh/Q/RWing.position.x = lerpf(0.12, 0.655, ext)
 
 
 func set_stats(
