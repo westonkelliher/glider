@@ -12,6 +12,14 @@ var _goal: TutZone = null
 var _scored: bool = false
 
 
+func allow_boost() -> bool:
+	return true
+
+
+func allow_slow() -> bool:
+	return true
+
+
 func stage_title() -> String:
 	return "9 · Score"
 

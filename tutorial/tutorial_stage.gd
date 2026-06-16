@@ -61,6 +61,15 @@ func teardown() -> void:
 	pass
 
 
+## Which powers this stage unlocks. Steering + grip are always available;
+## boost and the hard-brake stay disabled until the stage that teaches them.
+func allow_boost() -> bool:
+	return false
+
+func allow_slow() -> bool:
+	return false
+
+
 # ---- Helpers available to subclasses ----
 
 ## Convenience: a transform at `pos` whose nose (-Z) faces `look_dir`.

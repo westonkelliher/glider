@@ -12,6 +12,14 @@ var _target_pos: Vector3 = Vector3(26.0, 8.0, -78.0)
 var _done: bool = false
 
 
+func allow_boost() -> bool:
+	return true
+
+
+func allow_slow() -> bool:
+	return true
+
+
 func stage_title() -> String:
 	return "8 · Dribble"
 

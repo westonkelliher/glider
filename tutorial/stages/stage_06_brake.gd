@@ -18,6 +18,14 @@ var _idle_color: Color = Color(0.3, 0.6, 1.0)
 var _hold_color: Color = Color(0.3, 1.0, 0.45)
 
 
+func allow_boost() -> bool:
+	return true
+
+
+func allow_slow() -> bool:
+	return true
+
+
 func stage_title() -> String:
 	return "6 · Hard Brake"
 

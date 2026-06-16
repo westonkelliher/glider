@@ -31,6 +31,7 @@ var glider: Glider = null
 var ui: TutorialUI = null
 var props_root: Node3D = null
 var camera: Node3D = null
+var input_ctl: TutorialController = null
 
 var _idx: int = 0
 var _state: int = State.INTRO
@@ -44,6 +45,11 @@ func setup(g: Glider, u: TutorialUI, props: Node3D, cam: Node3D) -> void:
 	ui = u
 	props_root = props
 	camera = cam
+	# Replace the glider's human controller with one that masks untaught powers,
+	# and stop missiles firing in the tutorial (not a taught mechanic).
+	input_ctl = TutorialController.new()
+	glider.controller = input_ctl
+	glider.allow_missiles = false
 	ui.restart_requested.connect(_on_restart)
 	ui.skip_requested.connect(_on_skip)
 
@@ -93,6 +99,9 @@ func _load_stage(index: int) -> void:
 	_stage.ui = ui
 	_stage.camera = camera
 	props_root.add_child(_stage)
+	# Unlock only the powers this stage teaches.
+	input_ctl.boost_allowed = _stage.allow_boost()
+	input_ctl.slow_allowed = _stage.allow_slow()
 	_stage.completed.connect(_on_stage_completed)
 	_stage.failed.connect(_on_stage_failed)
 

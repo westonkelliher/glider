@@ -15,7 +15,7 @@ const MAX_SPEED := 35.0
 const BOOST_MAX := 100.0
 const BOOST_DRAIN := 45.0          # units/sec while boosting (~2.2s of full tank)
 const BOOST_RECHARGE := 22.0       # units/sec once recharging
-const BOOST_RECHARGE_DELAY := 5.0  # sec of no boosting before the tank refills
+const BOOST_RECHARGE_DELAY := 8.0  # sec of no boosting before the tank refills
 
 
 ## Flight tuning — PRIMARY/SECONDARY presets, toggled live with T or the pause menu.
@@ -61,6 +61,9 @@ var _hud: CanvasLayer
 ## Boost reserve state. Starts full and ready (idle past the recharge delay).
 var boost_amount := BOOST_MAX
 var _boost_idle := BOOST_RECHARGE_DELAY
+## Latched true when the tank empties mid-boost; blocks re-firing until the
+## player releases the button, so a held boost doesn't waste the first recharge.
+var _boost_locked := false
 ## Exhaust flame, emitting only while boosting (created for every glider).
 var _boost_fx: CPUParticles3D
 
@@ -71,6 +74,8 @@ var _boost_fx: CPUParticles3D
 @export var ai_variant := "base"
 ## World point this glider attacks. Default = BLUE goal (north, +Z).
 @export var target_goal := Vector3(0.0, 15.0, 205.0)
+## Whether the launch action fires a missile. The tutorial disables this.
+var allow_missiles := true
 var control_scheme := GliderInput.Scheme.RL
 var _menu: CanvasLayer
 var controller: RefCounted
@@ -191,15 +196,15 @@ func menu_labels() -> Dictionary:
 func _unhandled_input(event: InputEvent) -> void:
 	if is_ai:
 		return
-	# T / Back toggles PRIMARY <-> SECONDARY tuning live.
+	# T toggles PRIMARY <-> SECONDARY tuning live (also a pause-menu button).
 	if event.is_action_pressed("toggle_tuning"):
 		toggle_tuning()
 		_menu.refresh_labels()
-	# C / Start toggles RL <-> PILOT control scheme live.
+	# C toggles RL <-> PILOT control scheme live (also a pause-menu button).
 	elif event.is_action_pressed("toggle_scheme"):
 		toggle_control()
 		_menu.refresh_labels()
-	if event.is_action_pressed("launch"):
+	if event.is_action_pressed("launch") and allow_missiles:
 		launch_missile()
 
 
@@ -289,11 +294,16 @@ func _physics_process(delta: float) -> void:
 	
 	# Boost only fires while there's reserve left; it drains the tank, which
 	# refills once we've gone BOOST_RECHARGE_DELAY seconds without boosting.
-	var boosting := ctl.boost and boost_amount > 0.0
+	# Releasing the button clears the empty-tank lock so the next press can boost.
+	if not ctl.boost:
+		_boost_locked = false
+	var boosting := ctl.boost and boost_amount > 0.0 and not _boost_locked
 	if boosting:
 		velocity += nose_dir * 50.0 * delta
 		boost_amount = maxf(0.0, boost_amount - BOOST_DRAIN * delta)
 		_boost_idle = 0.0
+		if boost_amount <= 0.0:
+			_boost_locked = true  # drained while held; require a release to re-fire
 	else:
 		_boost_idle += delta
 		if _boost_idle >= BOOST_RECHARGE_DELAY:

@@ -12,6 +12,14 @@ var _hold: float = 0.0
 var _engaged: bool = false
 
 
+func allow_boost() -> bool:
+	return true
+
+
+func allow_slow() -> bool:
+	return true
+
+
 func stage_title() -> String:
 	return "7 · Ball Cam"
 
