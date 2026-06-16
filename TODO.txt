@@ -1,6 +1,5 @@
 * remake glider mesh and hitboxes without weird scaling and sub-treeing
   * and thicker glider
-* left triggers applies a reverse force
 * handle any glider collisions with custom collision handling logic similar to
   ball
 * redo all the physics in terms of forces (still custom physics handling)
@@ -59,7 +58,7 @@
 * 2v2 mode
 * [DONE] fix no boost after goal bug
 * [DONE] the stick tilt in ball cam and velocity cam is fucking insane. tone it down
-* [DONE] new kickoffs are too close to the ball
+* kickoffs are too close to the ball
 * [DONE] reduce AI's boost visual effect compared to player
-* AI's boost force should be 70% as effective as player's
+* [DONE] AI's boost force should be 70% as effective as player's
 * [DONE] while touching ground, right trigger speeds player up (up to 14m/s)
