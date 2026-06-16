@@ -12,6 +12,8 @@ const BINDS := "[color=aqua][b]Fly[/b][/color]     L-stick pitch + turn · [colo
 
 var _pot_label: RichTextLabel
 var _stats_label: Label
+var _boost_bar: ProgressBar
+var _boost_caption: Label
 
 
 func _ready() -> void:
@@ -38,6 +40,33 @@ func _ready() -> void:
 	_stats_label.add_theme_font_size_override("font_size", 18)
 	add_child(_stats_label)
 
+	# Boost reserve meter, bottom-center.
+	_boost_bar = ProgressBar.new()
+	_boost_bar.show_percentage = false
+	_boost_bar.min_value = 0.0
+	_boost_bar.max_value = 1.0
+	_boost_bar.value = 1.0
+	_boost_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_boost_bar.offset_left = -140.0
+	_boost_bar.offset_right = 140.0
+	_boost_bar.offset_top = -52.0
+	_boost_bar.offset_bottom = -32.0
+	_boost_bar.add_theme_stylebox_override("background", _boost_bg())
+	_boost_bar.add_theme_stylebox_override("fill", _boost_fill())
+	add_child(_boost_bar)
+
+	_boost_caption = Label.new()
+	_boost_caption.text = "BOOST"
+	_boost_caption.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_boost_caption.offset_left = -140.0
+	_boost_caption.offset_right = 140.0
+	_boost_caption.offset_top = -74.0
+	_boost_caption.offset_bottom = -54.0
+	_boost_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boost_caption.add_theme_font_size_override("font_size", 14)
+	_boost_caption.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3))
+	add_child(_boost_caption)
+
 
 # Dark rounded panel behind the readout, with padding so text isn't flush.
 func _panel_bg() -> StyleBoxFlat:
@@ -52,6 +81,30 @@ func _panel_bg() -> StyleBoxFlat:
 	sb.content_margin_top = 8
 	sb.content_margin_bottom = 10
 	return sb
+
+
+func _boost_bg() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0.55)
+	sb.set_corner_radius_all(5)
+	sb.set_border_width_all(2)
+	sb.border_color = Color(1.0, 0.7, 0.3, 0.5)
+	return sb
+
+
+func _boost_fill() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(1.0, 0.55, 0.12, 0.95)
+	sb.set_corner_radius_all(5)
+	return sb
+
+
+## Boost reserve in [0, max] -> fills the bottom bar; dims while empty.
+func set_boost(amount: float, max_amount: float) -> void:
+	if not _boost_bar:
+		return
+	_boost_bar.value = amount / max_amount if max_amount > 0.0 else 0.0
+	_boost_bar.modulate = Color(1, 1, 1, 1) if amount > 0.01 else Color(1, 1, 1, 0.4)
 
 
 func set_readout(pot_height: float, tuning_name: String, scheme_name: String) -> void:

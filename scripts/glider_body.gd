@@ -10,6 +10,13 @@ const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
 const FLOOR_HEIGHT := 0.5
 const MAX_SPEED := 35.0
 
+## Boost reserve: a limited tank that drains while boosting and refills only
+## after a short idle, so boost is a resource to manage rather than spam.
+const BOOST_MAX := 100.0
+const BOOST_DRAIN := 45.0          # units/sec while boosting (~2.2s of full tank)
+const BOOST_RECHARGE := 22.0       # units/sec once recharging
+const BOOST_RECHARGE_DELAY := 5.0  # sec of no boosting before the tank refills
+
 
 ## Flight tuning — PRIMARY/SECONDARY presets, toggled live with T or the pause menu.
 var _tunings := [FlightTuning.primary(), FlightTuning.secondary()]
@@ -38,7 +45,7 @@ var yaw_v := 0.0
 ## the aerodynamic drag and the visual wing mesh, so they always move together.
 var wing_extension := 1.0
 ## Units/sec the wing extension eases toward its target (full sweep ~ 0.3s).
-var wing_extend_rate := 3.0
+var wing_extend_rate := 8.5
 
 
 ## Collision mass (heavy — the ball reacts to us far more than we react to it).
@@ -50,6 +57,12 @@ var _external_impulse := Vector3.ZERO
 ## Pot height (stored potential energy as an equivalent altitude).
 var pot_height := 0.0
 var _hud: CanvasLayer
+
+## Boost reserve state. Starts full and ready (idle past the recharge delay).
+var boost_amount := BOOST_MAX
+var _boost_idle := BOOST_RECHARGE_DELAY
+## Exhaust flame, emitting only while boosting (created for every glider).
+var _boost_fx: CPUParticles3D
 
 
 ## Controls.
@@ -75,6 +88,8 @@ func _ready() -> void:
 	_spawn_transform = global_transform
 	add_to_group("glider")
 	_apply_team_color(AI_COLOR if is_ai else PLAYER_COLOR)
+	_boost_fx = _make_boost_fx()
+	add_child(_boost_fx)
 	if is_ai:
 		controller = _make_ai_controller()
 	else:
@@ -84,6 +99,46 @@ func _ready() -> void:
 		_menu = PauseMenu.new()
 		_menu.glider = self
 		add_child(_menu)
+
+
+## Orange exhaust flame streamed out the tail (local +Z; the nose faces -Z).
+## local_coords=false so spawned particles stay in world space and trail behind
+## the craft. Toggled on/off by `emitting` each frame while boosting.
+func _make_boost_fx() -> CPUParticles3D:
+	var fx := CPUParticles3D.new()
+	fx.emitting = false
+	fx.local_coords = false
+	fx.amount = 40
+	fx.lifetime = 0.4
+	fx.position = Vector3(0.0, 0.05, 0.7)
+	fx.direction = Vector3(0.0, 0.0, 1.0)
+	fx.spread = 16.0
+	fx.initial_velocity_min = 7.0
+	fx.initial_velocity_max = 11.0
+	fx.gravity = Vector3.ZERO
+	fx.scale_amount_min = 0.5
+	fx.scale_amount_max = 0.9
+	var shrink := Curve.new()
+	shrink.add_point(Vector2(0.0, 1.0))
+	shrink.add_point(Vector2(1.0, 0.0))
+	fx.scale_amount_curve = shrink
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1.0, 0.85, 0.4, 1.0))   # hot core
+	grad.set_color(1, Color(1.0, 0.25, 0.0, 0.0))   # fades to dim red
+	fx.color_ramp = grad
+	var ball := SphereMesh.new()
+	ball.radius = 0.13
+	ball.height = 0.26
+	ball.radial_segments = 6
+	ball.rings = 3
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.vertex_color_use_as_albedo = true
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ball.material = mat
+	fx.mesh = ball
+	return fx
 
 
 ## Paint the body in the team color with a Rocket-League-ish metallic finish.
@@ -169,7 +224,7 @@ func _physics_process(delta: float) -> void:
 	## drifts on its momentum. Smooth toward the target so the discrete X button
 	## (snaps 0->1) doesn't jolt; the analog trigger already varies smoothly. The
 	## same smoothed value drives the wing mesh below, keeping visual == physics.
-	var target_extension := lerpf(1.0, 0.08, ctl.hand_brake)
+	var target_extension := lerpf(1.0, 0.00, ctl.hand_brake)
 	wing_extension = move_toward(wing_extension, target_extension, wing_extend_rate * delta)
 	set_wing_extension(wing_extension)
 	#
@@ -232,9 +287,19 @@ func _physics_process(delta: float) -> void:
 	var reduction_speed := 2.2 * pow(dhd, 1.2)
 	pot_height = move_toward(pot_height, position.y + d_h_2, reduction_speed * delta)
 	
-	if ctl.boost:
-		#pot_height += nose_dir.dot(current_dir) * 15.0 * delta
+	# Boost only fires while there's reserve left; it drains the tank, which
+	# refills once we've gone BOOST_RECHARGE_DELAY seconds without boosting.
+	var boosting := ctl.boost and boost_amount > 0.0
+	if boosting:
 		velocity += nose_dir * 50.0 * delta
+		boost_amount = maxf(0.0, boost_amount - BOOST_DRAIN * delta)
+		_boost_idle = 0.0
+	else:
+		_boost_idle += delta
+		if _boost_idle >= BOOST_RECHARGE_DELAY:
+			boost_amount = minf(BOOST_MAX, boost_amount + BOOST_RECHARGE * delta)
+	if _boost_fx:
+		_boost_fx.emitting = boosting
 
 	var slow := ctl.slow
 	if slow > 0.0 and current_speed > 4.0:
@@ -392,4 +457,5 @@ func set_stats(
 		"dir_catch": pot_dir_catchup,
 		"drag": tuning.DRAG * current_speed * (1.0 - align),
 	})
+	_hud.set_boost(boost_amount, BOOST_MAX)
 	
