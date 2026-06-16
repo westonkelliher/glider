@@ -25,6 +25,8 @@ var scen_set := "train"
 var reps := 12
 var seeds: Array = [1]
 var noise := 1.0
+var reward := "success"     # "success" (binary) or "dot" (continuous shaped reward)
+var dot_frames := 240       # fixed time budget per rep in "dot" mode
 
 var rng := RandomNumberGenerator.new()
 var referee: Node
@@ -41,7 +43,11 @@ var rep_frame := 0
 var base_blue := 0
 var base_orange := 0
 var succ := 0                # successes accumulated for the current genome
+var reward_sum := 0.0        # summed dot-reward accumulated for the current genome
 var done := false
+
+const POS_B_THRESH := 0.6    # position-kind: behindness >= this
+const POS_D_THRESH := 26.0   # position-kind: AND dist to ball <= this
 
 
 func _ready() -> void:
@@ -59,8 +65,8 @@ func _ready() -> void:
 	glider.controller.aim_noise = noise
 	scenarios = Scenarios.scenario_set(scen_set)
 	_load_manifest()
-	print("[ga] batch genomes=%d set=%s reps=%d seeds=%s" % [
-		genomes.size(), scen_set, reps, str(seeds)])
+	print("[ga] batch genomes=%d set=%s reps=%d seeds=%s reward=%s dot_frames=%d" % [
+		genomes.size(), scen_set, reps, str(seeds), reward, dot_frames])
 	if genomes.is_empty():
 		get_tree().quit()
 		return
@@ -82,6 +88,7 @@ func _load_manifest() -> void:
 func _start_genome() -> void:
 	glider.controller.call("apply_weights", genomes[gi])
 	succ = 0
+	reward_sum = 0.0
 	sei = 0
 	_start_seed()
 
@@ -123,7 +130,7 @@ func _place_glider(pos: Vector3, face: Vector3, vel: Vector3) -> void:
 	glider.global_transform = t
 	glider.velocity = vel
 	glider.pot_height = pos.y + vel.length_squared() / (2.0 * G_GLIDER)
-	glider.air_friction = 1.0
+	glider.wing_extension = 1.0
 	glider.ail_pitch = 0.0
 	glider.ail_pitch_target = 0.0
 	glider.ail_pitch_speed = 0.0
@@ -149,7 +156,25 @@ func _physics_process(_d: float) -> void:
 
 	var ended := false
 	var success := false
-	if s["kind"] == "shot":
+	if reward == "dot":
+		# CONTINUOUS shaped reward: never end early. At the END of a FIXED budget,
+		# score how fast the ball is moving toward the target (+Z) goal.
+		if rep_frame >= dot_frames:
+			ended = true
+			var to_goal: Vector3 = NORTH - ball.global_position
+			if to_goal.length() < 0.001:
+				reward_sum += 0.0
+			else:
+				reward_sum += ball.velocity.dot(to_goal.normalized())
+	elif s["kind"] == "position":
+		var b_thresh: float = float(s.get("b_thresh", POS_B_THRESH))
+		var d_thresh: float = float(s.get("d_thresh", POS_D_THRESH))
+		var budget: int = int(s.get("frames", SHOT_FRAMES))
+		if _positioned(b_thresh, d_thresh):
+			ended = true; success = true
+		elif rep_frame >= budget:
+			ended = true
+	elif s["kind"] == "shot":
 		if db > 0:
 			ended = true; success = true
 		elif rep_frame >= SHOT_FRAMES:
@@ -178,13 +203,31 @@ func _physics_process(_d: float) -> void:
 	if sei < seeds.size():
 		_start_seed()
 		return
-	print("[ga] idx=%d success=%d" % [gi, succ])
+	if reward == "dot":
+		print("[ga] idx=%d reward=%.3f" % [gi, reward_sum])
+	else:
+		print("[ga] idx=%d success=%d" % [gi, succ])
 	gi += 1
 	if gi < genomes.size():
 		_start_genome()
 		return
 	done = true
 	get_tree().quit()
+
+
+## position-kind success: glider lined up behind the ball toward the +Z (NORTH)
+## goal and within range. Same behindness math as ai_base.gd._context.
+func _positioned(b_thresh: float, d_thresh: float) -> bool:
+	var bp: Vector3 = ball.global_position
+	var gp: Vector3 = glider.global_position
+	var ball_flat := Vector3(bp.x, 0.0, bp.z)
+	var goal_flat := Vector3(NORTH.x, 0.0, NORTH.z)
+	var shoot_dir: Vector3 = (goal_flat - ball_flat).normalized()
+	var from_ball: Vector3 = Vector3(gp.x, 0.0, gp.z) - ball_flat
+	var behindness: float = -1.0
+	if from_ball.length() > 0.1:
+		behindness = from_ball.normalized().dot(-shoot_dir)
+	return behindness >= b_thresh and gp.distance_to(bp) <= d_thresh
 
 
 func _js(base: float, floor_amp: float) -> float:
@@ -206,6 +249,8 @@ func _parse_args() -> void:
 			"set": scen_set = kv[1]
 			"reps": reps = int(kv[1])
 			"noise": noise = float(kv[1])
+			"reward": reward = kv[1]
+			"dot_frames": dot_frames = int(kv[1])
 			"seeds":
 				seeds = []
 				for s: String in kv[1].split(","):

@@ -33,9 +33,12 @@ var pitch_v := 0.0
 var roll_v := 0.0
 var yaw_v := 0.0
 
-## Air-brake friction: smoothed toward a handbrake-driven target (1.0 = full
-## friction at zero brake, 0.08 = nearly frictionless at full brake).
-var air_friction := 1.0
+## How far the wings are extended (1.0 = fully out, max drag; 0.08 = retracted,
+## nearly frictionless). Smoothed toward a handbrake-driven target — drives both
+## the aerodynamic drag and the visual wing mesh, so they always move together.
+var wing_extension := 1.0
+## Units/sec the wing extension eases toward its target (full sweep ~ 0.3s).
+var wing_extend_rate := 3.0
 
 
 ## Collision mass (heavy — the ball reacts to us far more than we react to it).
@@ -162,12 +165,13 @@ func _physics_process(delta: float) -> void:
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	#
-	## air brake — analog handbrake cuts friction so the craft drifts on its
-	## momentum. Smooth toward the target so the discrete X button (snaps 0->1)
-	## doesn't jolt; the analog trigger already varies smoothly.
-	var target_friction := lerpf(1.0, 0.08, ctl.hand_brake)
-	air_friction = move_toward(air_friction, target_friction, 3.0 * delta)
-	pull_in_wings(ctl.hand_brake)
+	## air brake — analog handbrake retracts the wings, cutting drag so the craft
+	## drifts on its momentum. Smooth toward the target so the discrete X button
+	## (snaps 0->1) doesn't jolt; the analog trigger already varies smoothly. The
+	## same smoothed value drives the wing mesh below, keeping visual == physics.
+	var target_extension := lerpf(1.0, 0.08, ctl.hand_brake)
+	wing_extension = move_toward(wing_extension, target_extension, wing_extend_rate * delta)
+	set_wing_extension(wing_extension)
 	#
 	## current values
 	var current_speed := velocity.length()
@@ -176,9 +180,9 @@ func _physics_process(delta: float) -> void:
 		current_dir = Vector3.DOWN
 	#
 	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
-	#var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
+	#var drag_factor := wing_extension * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
-	var drag_factor := (1 - absf(nose_dot))*air_friction
+	var drag_factor := (1 - absf(nose_dot))*wing_extension
 	# handbrake sharpens turn rate: lerp both coefficients from cruise to braked.
 	var rrate := lerpf(0.5, 0.8, ctl.hand_brake) \
 		+ lerpf(0.1, 0.06, ctl.hand_brake) * sqrt(velocity.length()) #* nose_dot
@@ -203,7 +207,7 @@ func _physics_process(delta: float) -> void:
 	var new_speed := move_toward(current_speed, pot_speed, pot_speed_catchup * delta)
 	var dir_offset := nose_dir.angle_to(current_dir)
 	var closeness_to_45 := 1.0 - (absf(PI/4.0 - absf(fmod(dir_offset, PI/2.0)))/(PI/4))
-	var pot_dir_catchup := 0.2 + air_friction * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45 + 0.2)
+	var pot_dir_catchup := 0.2 + wing_extension * tuning.POT_DIR_CATCHUP_MULT * current_speed * sqrt(closeness_to_45 + 0.2)
 	var new_dir := current_dir.move_toward(nose_dir, pot_dir_catchup * delta)# TODO: calculate shortest direct arc from current_dir to pot_dir
 	var new_velocity := new_speed * new_dir + Vector3.UP*0.01
 	#
@@ -356,10 +360,10 @@ static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, 
 	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))
 
 
-func pull_in_wings(amount: float) -> void:
-	# amount in [0,1]: 0 = wings fully out, 1 = fully pulled in.
-	$Mesh/Q/LWing.position.x = lerpf(-0.655, -0.4, amount)
-	$Mesh/Q/RWing.position.x = lerpf(0.655, 0.4, amount)
+func set_wing_extension(ext: float) -> void:
+	# ext in [0,1]: 1 = wings fully out, 0 = fully retracted.
+	$Mesh/Q/LWing.position.x = lerpf(-0.4, -0.655, ext)
+	$Mesh/Q/RWing.position.x = lerpf(0.4, 0.655, ext)
 
 
 func set_stats(
