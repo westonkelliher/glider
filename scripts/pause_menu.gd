@@ -17,6 +17,10 @@ var is_open := false
 var _root: Control
 var _tuning_btn: Button
 var _control_btn: Button
+# Stage-select section, populated lazily the first time the menu opens inside a
+# tutorial (the TutorialManager isn't built yet when this menu is constructed).
+var _stage_box: VBoxContainer
+var _stages_built := false
 
 
 func _ready() -> void:
@@ -59,6 +63,11 @@ func _build() -> void:
 	_control_btn.pressed.connect(_on_control_pressed)
 	vbox.add_child(_control_btn)
 
+	# Tutorial-only stage jump buttons (filled in on first open if applicable).
+	_stage_box = VBoxContainer.new()
+	_stage_box.add_theme_constant_override("separation", 6)
+	vbox.add_child(_stage_box)
+
 	var resume := Button.new()
 	resume.text = "Resume"
 	resume.pressed.connect(close)
@@ -92,9 +101,39 @@ func toggle() -> void:
 
 func open() -> void:
 	is_open = true
+	_ensure_stage_select()
 	_root.visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+# Build a "Jump to stage" list the first time we open inside a tutorial. A plain
+# match has no TutorialManager, so this stays empty there.
+func _ensure_stage_select() -> void:
+	if _stages_built:
+		return
+	var mgr: Node = get_tree().get_first_node_in_group("tutorial_manager")
+	if mgr == null or not mgr.has_method("stage_titles"):
+		return
+	_stages_built = true
+	var header := Label.new()
+	header.text = "— Jump to stage —"
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 20)
+	_stage_box.add_child(header)
+	var titles: Array = mgr.stage_titles()
+	for i in titles.size():
+		var b := Button.new()
+		b.text = "%d. %s" % [i + 1, titles[i]]
+		b.pressed.connect(_on_stage_pressed.bind(i))
+		_stage_box.add_child(b)
+
+
+func _on_stage_pressed(index: int) -> void:
+	var mgr: Node = get_tree().get_first_node_in_group("tutorial_manager")
+	if mgr and mgr.has_method("jump_to_stage"):
+		mgr.jump_to_stage(index)
+	close()
 
 
 func close() -> void:

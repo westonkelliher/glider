@@ -410,6 +410,11 @@ func reset_to_spawn() -> void:
 	ail_yaw = 0.0
 	ail_yaw_target = 0.0
 	ail_yaw_speed = 0.0
+	# Refill the boost tank and clear the empty-tank lock, so a player who
+	# drained boost before a goal isn't left with none after the reset.
+	boost_amount = BOOST_MAX
+	_boost_idle = BOOST_RECHARGE_DELAY
+	_boost_locked = false
 
 
 var p_is_start := true

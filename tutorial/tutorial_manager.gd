@@ -52,6 +52,8 @@ func setup(g: Glider, u: TutorialUI, props: Node3D, cam: Node3D) -> void:
 	# Replace the glider's human controller with one that masks untaught powers.
 	input_ctl = TutorialController.new()
 	glider.controller = input_ctl
+	# Discoverable by the (player-owned) pause menu, for its stage-select list.
+	add_to_group("tutorial_manager")
 	ui.restart_requested.connect(_on_restart)
 	ui.skip_requested.connect(_on_skip)
 	ui.back_requested.connect(_on_back)
@@ -87,6 +89,26 @@ func _start_match() -> void:
 
 func begin() -> void:
 	_load_stage(0)
+
+
+## Human-readable title for every stage, for the pause-menu stage select.
+func stage_titles() -> Array[String]:
+	var titles: Array[String] = []
+	for path in STAGE_PATHS:
+		var s: GDScript = load(path) as GDScript
+		var title: String = path
+		if s != null:
+			var inst: TutorialStage = s.new() as TutorialStage
+			if inst != null:
+				title = inst.stage_title()
+				inst.free()
+		titles.append(title)
+	return titles
+
+
+## Jump straight to a stage (driven by the pause-menu stage select).
+func jump_to_stage(index: int) -> void:
+	_load_stage(index)
 
 
 func _load_stage(index: int) -> void:
