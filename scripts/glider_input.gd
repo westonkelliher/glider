@@ -30,11 +30,15 @@ static func read_targets(scheme: Scheme) -> Vector3:
 		yaw = Input.get_axis("yaw_left", "yaw_right")
 	return Vector3(pitch, roll, yaw)
 
-## Analog handbrake in [0,1], INVERTED: full brake (1.0) by default, released
-## toward 0.0 as the right trigger is pulled or the X button is held (the
-## air_brake action; get_action_strength maxes button + trigger).
+## Analog handbrake in [0,1]. Default is FULL brake (1.0); the right trigger
+## releases it (1.0 - trigger). The X button (air_brake_flip) INVERTS the
+## trigger's sense, so holding X makes the trigger *apply* brake instead —
+## i.e. X + full trigger == no-X + no-trigger == full brake (1.0).
 static func read_hand_brake() -> float:
-	return 1.0 - Input.get_action_strength("air_brake")
+	var trigger := Input.get_action_strength("air_brake")
+	if Input.is_action_pressed("air_brake_flip"):
+		return trigger
+	return 1.0 - trigger
 
 
 static func name_of(scheme: Scheme) -> String:
