@@ -9,16 +9,16 @@ extends Resource
 ## Ailerons — how fast a surface eases toward target (1/s) and craft turn
 ## authority per unit of deflection.
 # aileron speed
-@export var AIL_PITCH_SPEED := 6.0
-@export var AIL_ROLL_SPEED := 7.0
-@export var AIL_YAW_SPEED := 4.0
+@export var AIL_PITCH_SPEED := 5.0
+@export var AIL_ROLL_SPEED := 6.0
+@export var AIL_YAW_SPEED := 3.2
 # aileron acc
 @export var AIL_ACC := 1.0 # dont go to 0 even though we interp
 @export var AIL_DAMP_ZONES_SIZE := 0.7 # as a fraction of total aileron range (for each zone)
 # max rotation speeds
-@export var PITCH_MULT := 3.5
-@export var ROLL_MULT := 4.0
-@export var YAW_MULT := 3.0
+@export var PITCH_MULT := 3.0
+@export var ROLL_MULT := 3.5
+@export var YAW_MULT := 2.5
 
 ## Pot-height energy model.
 @export var POT_SPEED_CATCHUP_MULT := 1.5
