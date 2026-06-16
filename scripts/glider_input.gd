@@ -30,8 +30,10 @@ static func read_targets(scheme: Scheme) -> Vector3:
 		yaw = Input.get_axis("yaw_left", "yaw_right")
 	return Vector3(pitch, roll, yaw)
 
-static func read_braked() -> bool:
-	return Input.is_action_pressed("air_brake")
+## Analog handbrake in [0,1]: right trigger gives its pressure, the X button
+## (also bound to air_brake) reads as a full 1.0 — get_action_strength maxes them.
+static func read_hand_brake() -> float:
+	return Input.get_action_strength("air_brake")
 
 
 static func name_of(scheme: Scheme) -> String:

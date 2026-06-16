@@ -9,7 +9,7 @@ extends RefCounted
 ##     +pitch = nose up,  +yaw = nose right,  +roll = bank right.
 ##   ctl.boost  = add energy/speed along the nose.
 ##   ctl.slow   = [0,1] analog decel (bleed speed; good to set up a shot).
-##   ctl.braked = HANDBRAKE. Cuts air friction so the craft pivots/turns MUCH
+##   ctl.hand_brake = HANDBRAKE [0,1]. Cuts air friction so the craft pivots MUCH
 ##     more sharply (great for snapping around mid-course) at the cost of speed.
 ##     Use it for hard turns, not cruising.
 ##
@@ -37,7 +37,7 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 		aim += Vector3(rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise))
 	ctl.targets = _steer(glider, aim)
 	ctl.boost = _decide_boost(glider, ball, ctx, aim)
-	ctl.braked = _decide_brake(glider, ball, ctx, aim)
+	ctl.hand_brake = 1.0 if _decide_brake(glider, ball, ctx, aim) else 0.0
 	ctl.slow = _decide_slow(glider, ball, ctx, aim)
 	return ctl
 

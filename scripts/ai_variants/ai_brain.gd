@@ -1,22 +1,22 @@
 extends AiBase
 ## GENERALIZATION BRAIN — a single parametric striker that subsumes the variant
-## zoo (base/center/goalside/defense/prediction/powerdive/stallrec/...). Nothing
-## here is a behaviour switch; instead EVERY value the AI produces — both the
-## high-level decision/priority scalars and the low-level control inputs — is
-## computed the same way:
+## zoo (base/center/goalside/defense/prediction/powerdive/stallrec/...). A
+## hand-coded DETERMINISTIC baseline keeps it flying sanely on its own; on top of
+## that baseline a small 2-layer perceptron (MLP) produces RESIDUAL corrections.
 ##
-##     value = deterministic_programmatic_component  +  ( weights · features )
+##     value = deterministic_programmatic_component  +  mlp_residual
 ##
-## A hand-coded baseline keeps it flying sanely with all weights at zero; the
-## weight rows are the (large) fine-tuning surface layered on top. No single
-## weight equals a control input — each output is a linear combination of many
-## tuned coefficients against shared geometric features.
+## With the MLP weights all zero the residuals are zero, so the brain reproduces
+## the pure deterministic baseline exactly — that is the trainer's floor.
+##
+## NET TOPOLOGY (see genome contract below):
+##   IN = 34  ->  hidden H = 12 (tanh)  ->  OUT = 13 (linear)
+##   IN  = [27 geometry features] ++ [7 deterministic decision scalars]
+##   OUT = [7 decision residuals] ++ [6 control residuals]
 ##
 ## FEATURES are raw geometry/physics in the glider's LOCAL frame (so steering
 ## stays orientation-relative): direction & distance to ball / own goal / other
 ## goal / opponent, ball velocity, own speed/altitude/energy, alignment, etc.
-## TWO matrices: Tier-1 (decisions) reads features; Tier-2 (controls) reads
-## features PLUS the Tier-1 decisions, so priorities modulate the ailerons.
 
 const TWO_GOAL_Z := 205.0   # |z| of either goal (own goal mirrors target_goal.z)
 
@@ -25,45 +25,59 @@ const TWO_GOAL_Z := 205.0   # |z| of either goal (own goal mirrors target_goal.z
 const POS_SCALE := 1.0 / 50.0
 const VEL_SCALE := 1.0 / 20.0
 
+# ---------------------------------------------------------------------------
+# MLP topology.
+# ---------------------------------------------------------------------------
+const IN_N := 34
+const HID_N := 12
+const OUT_N := 13
+
+# IN order (34): 27 geometry features (FEATURE_KEYS) then 7 decision scalars
+# (DECISION_KEYS). This MUST stay fixed — the genome columns are aligned to it.
+const FEATURE_KEYS := [
+	"bias",
+	"to_ball_x", "to_ball_y", "to_ball_z",
+	"dist_n",
+	"to_own_goal_x", "to_own_goal_y", "to_own_goal_z",
+	"to_other_goal_x", "to_other_goal_y", "to_other_goal_z",
+	"to_opp_x", "to_opp_y", "to_opp_z",
+	"ball_vel_x", "ball_vel_y", "ball_vel_z",
+	"ball_speed_n",
+	"behind", "near", "align", "speed_n", "alt_n", "energy_n",
+	"ball_wide", "ball_depth", "ball_closing",
+]   # 27
+# Decision order (also OUT 0..6 residual order).
+const DECISION_KEYS := [
+	"attack", "commit", "center", "defend", "climb", "recover", "intercept",
+]   # 7
 
 # ---------------------------------------------------------------------------
-# TIER-1 weight rows: decision/priority scalars. Each row is {feature: weight};
-# the value is its deterministic baseline + Σ weight·feature, clamped to [0,1].
+# Net weights: flat PackedFloat32Array, row-major.
+#   W1: length IN_N*HID_N, index = h*IN_N + i  (hidden h, input i)
+#   b1: length HID_N
+#   W2: length HID_N*OUT_N, index = o*HID_N + h  (output o, hidden h)
+#   b2: length OUT_N
+# All-zero (the default) => zero residuals => deterministic baseline.
 # ---------------------------------------------------------------------------
-var w_attack := {}
-var w_commit := {}
-var w_center := {}
-var w_defend := {}
-var w_climb := {}
-var w_recover := {}
-var w_intercept := {}
-
-# ---------------------------------------------------------------------------
-# TIER-2 weight rows: low-level controls. Inputs include the Tier-1 decisions
-# (keys prefixed "d_"). Pitch/roll/yaw clamp to [-1,1]; boost/brake threshold at
-# 0.5; slow clamps to [0,1].
-# ---------------------------------------------------------------------------
-var w_pitch := {}
-var w_roll  := {}
-var w_yaw   := {}
-var w_boost := {}
-var w_slow  := {}
-var w_brake := {}
+var W1 := PackedFloat32Array()
+var b1 := PackedFloat32Array()
+var W2 := PackedFloat32Array()
+var b2 := PackedFloat32Array()
 
 
 ## Optionally load the whole weight set from a JSON file named by the
 ## BRAIN_WEIGHTS env var (the evolutionary driver writes one genome per file).
-## JSON shape: {"w_pitch": {"feature": weight, ...}, ...}. Missing rows/features
-## simply stay at their built-in default (0), so partial genomes are fine.
+## JSON shape: {"W1":[...], "b1":[...], "W2":[...], "b2":[...]} (flat float
+## arrays). Missing or wrong-length arrays are treated as all-zeros, so a
+## partial/empty genome simply yields the deterministic baseline.
 ## The evolutionary driver overrides this per-candidate via BRAIN_WEIGHTS; in
 ## normal play (F5) we fall back to the committed champion next to this script.
 const DEFAULT_WEIGHTS := "res://scripts/ai_variants/ai_brain_weights.json"
-const ROWS := ["w_attack", "w_commit", "w_center", "w_defend", "w_climb",
-	"w_recover", "w_intercept", "w_pitch", "w_roll", "w_yaw", "w_boost",
-	"w_slow", "w_brake"]
 
 
 func _init() -> void:
+	# Start zeroed (deterministic baseline) so a missing/bad genome never crashes.
+	apply_weights({})
 	var path := OS.get_environment("BRAIN_WEIGHTS")
 	if path == "" and FileAccess.file_exists(DEFAULT_WEIGHTS):
 		path = DEFAULT_WEIGHTS
@@ -74,12 +88,55 @@ func _init() -> void:
 		apply_weights(data)
 
 
-## Replace the whole weight set from a parsed genome dict (authoritative: rows
-## absent from `data` reset to empty). Lets the batch harness re-weight one
-## long-lived brain instance per candidate without restarting the engine.
+## Replace the whole weight set from a parsed genome dict (AUTHORITATIVE: fully
+## replaces prior weights so the batch harness can re-weight one long-lived brain
+## per candidate). Missing keys or wrong-length arrays zero-fill to the correct
+## length — never crashes on bad input.
 func apply_weights(data: Dictionary) -> void:
-	for row_name: String in ROWS:
-		set(row_name, {} if not data.has(row_name) else data[row_name])
+	W1 = _load_array(data, "W1", IN_N * HID_N)
+	b1 = _load_array(data, "b1", HID_N)
+	W2 = _load_array(data, "W2", HID_N * OUT_N)
+	b2 = _load_array(data, "b2", OUT_N)
+
+
+## Parse one flat float array of exactly `n` entries from `data[key]`; any
+## absent/non-array/short/over-long value yields an all-zero array of length n.
+func _load_array(data: Dictionary, key: String, n: int) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	out.resize(n)   # zero-filled
+	if not data.has(key):
+		return out
+	var src: Variant = data[key]
+	if typeof(src) != TYPE_ARRAY:
+		return out
+	var arr: Array = src
+	if arr.size() != n:
+		return out   # wrong length => treat as all-zeros
+	for i: int in range(n):
+		out[i] = float(arr[i])
+	return out
+
+
+## Forward pass: IN(34) -> hidden(HID_N, tanh) -> OUT(13 linear). Returns the 13
+## residuals. With zero weights every output is zero.
+func _forward(inputs: PackedFloat32Array) -> PackedFloat32Array:
+	var hidden := PackedFloat32Array()
+	hidden.resize(HID_N)
+	for h: int in range(HID_N):
+		var acc: float = b1[h]
+		var base: int = h * IN_N
+		for i: int in range(IN_N):
+			acc += W1[base + i] * inputs[i]
+		hidden[h] = tanh(acc)
+	var out := PackedFloat32Array()
+	out.resize(OUT_N)
+	for o: int in range(OUT_N):
+		var acc2: float = b2[o]
+		var base2: int = o * HID_N
+		for h2: int in range(HID_N):
+			acc2 += W2[base2 + h2] * hidden[h2]
+		out[o] = acc2
+	return out
 
 
 func sample(glider: Glider, _scheme: int) -> GliderControls:
@@ -89,46 +146,53 @@ func sample(glider: Glider, _scheme: int) -> GliderControls:
 		return ctl
 	var ctx: Dictionary = _context(glider, ball)
 
+	# 1) Geometry features (deterministic).
 	var feats: Dictionary = _features(glider, ball, ctx)
+	# 2) Deterministic decision scalars (no weighted term anymore).
 	var dec: Dictionary = _decisions(feats)
-	# Decisions become extra inputs to the control matrix.
-	for k: String in dec:
-		feats["d_" + k] = dec[k]
 
-	# Deterministic aim: a priority-weighted blend of the candidate waypoints the
-	# old variants each hard-coded. The Tier-1 decisions choose the mix.
-	var aim: Vector3 = _aim(glider, ctx, dec)
+	# 3) Build the 34-input MLP vector in the fixed documented order.
+	var inputs := PackedFloat32Array()
+	inputs.resize(IN_N)
+	var idx: int = 0
+	for k: String in FEATURE_KEYS:
+		inputs[idx] = float(feats.get(k, 0.0))
+		idx += 1
+	for k: String in DECISION_KEYS:
+		inputs[idx] = float(dec.get(k, 0.0))
+		idx += 1
+
+	# 4) Forward pass -> 13 residuals.
+	var res: PackedFloat32Array = _forward(inputs)
+
+	# 5) Decision residuals (OUT 0..6) added to deterministic decisions, clamped.
+	var corrected: Dictionary = {}
+	for d: int in range(DECISION_KEYS.size()):
+		var name: String = DECISION_KEYS[d]
+		corrected[name] = clampf(float(dec[name]) + res[d], 0.0, 1.0)
+
+	# 6) Corrected decisions drive the deterministic aim blend, then steer.
+	var aim: Vector3 = _aim(glider, ctx, corrected)
 	if aim_noise > 0.0:
 		aim += Vector3(rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise), rng.randfn(0.0, aim_noise))
 
-	# Steering baseline (same mapping the base striker uses), then add the
-	# weighted fine-tuning layer and re-fold geometry features for context.
 	var desired: Vector3 = aim - glider.global_position
 	var steer: Vector3 = _steer(glider, aim)
-	var turn_n: float = clampf(desired.normalized().angle_to(ctx["nose"]) / PI, 0.0, 1.0)
-	feats["turn_n"] = turn_n
 
+	# 7) Control residuals (OUT 7..12): pitch, roll, yaw, boost, slow, brake.
 	ctl.targets = Vector3(
-		clampf(_combine(steer.x, w_pitch, feats), -1.0, 1.0),
-		clampf(_combine(steer.y, w_roll, feats), -1.0, 1.0),
-		clampf(_combine(steer.z, w_yaw, feats), -1.0, 1.0))
+		clampf(steer.x + res[7], -1.0, 1.0),
+		clampf(steer.y + res[8], -1.0, 1.0),
+		clampf(steer.z + res[9], -1.0, 1.0))
 
 	var facing: float = ctx["nose"].dot(desired.normalized()) if desired.length() > 0.01 else 0.0
 	var boost_det: float = 0.0
 	if facing > 0.2 and (ctx["speed"] < 26.0 or desired.length() > 40.0):
 		boost_det = 0.6
-	ctl.boost = _combine(boost_det, w_boost, feats) > 0.5 and facing > 0.1
-	ctl.braked = _combine(0.0, w_brake, feats) > 0.5
-	ctl.slow = clampf(_combine(0.0, w_slow, feats), 0.0, 1.0)
+	ctl.boost = (boost_det + res[10]) > 0.5 and facing > 0.1
+	ctl.slow = clampf(0.0 + res[11], 0.0, 1.0)
+	ctl.hand_brake = 1.0 if (0.0 + res[12]) > 0.5 else 0.0
 	return ctl
-
-
-## value = deterministic baseline + Σ weight·feature.
-func _combine(det: float, row: Dictionary, feats: Dictionary) -> float:
-	var v: float = det
-	for k: String in row:
-		v += float(row[k]) * float(feats.get(k, 0.0))
-	return v
 
 
 func _own_goal(glider: Glider) -> Vector3:
@@ -183,24 +247,24 @@ func _features(glider: Glider, _ball: Node3D, ctx: Dictionary) -> Dictionary:
 
 
 # ---------------------------------------------------------------------------
-# Tier-1 decisions: det baseline + weighted features, each clamped to [0,1].
+# Tier-1 decisions: DETERMINISTIC baselines, each clamped to [0,1]. The MLP adds
+# residuals to these afterward.
 # ---------------------------------------------------------------------------
-func _decisions(f: Dictionary) -> Dictionary:
+func _decisions(_f: Dictionary) -> Dictionary:
 	return {
-		"attack":    clampf(_combine(0.35, w_attack, f), 0.0, 1.0),
-		"commit":    clampf(_combine(0.0, w_commit, f), 0.0, 1.0),
-		"center":    clampf(_combine(0.0, w_center, f), 0.0, 1.0),
-		"defend":    clampf(_combine(-0.2, w_defend, f), 0.0, 1.0),
-		"climb":     clampf(_combine(0.0, w_climb, f), 0.0, 1.0),
-		"recover":   clampf(_combine(-0.1, w_recover, f), 0.0, 1.0),
-		"intercept": clampf(_combine(0.0, w_intercept, f), 0.0, 1.0),
+		"attack":    clampf(0.35, 0.0, 1.0),
+		"commit":    clampf(0.0, 0.0, 1.0),
+		"center":    clampf(0.0, 0.0, 1.0),
+		"defend":    clampf(-0.2, 0.0, 1.0),
+		"climb":     clampf(0.0, 0.0, 1.0),
+		"recover":   clampf(-0.1, 0.0, 1.0),
+		"intercept": clampf(0.0, 0.0, 1.0),
 	}
 
 
 # ---------------------------------------------------------------------------
 # Deterministic aim: blend candidate waypoints (one per generalized pattern) by
-# the Tier-1 priorities. This is the programmatic component the steer baseline
-# reads; the Tier-2 weights fine-tune the resulting ailerons on top.
+# the (corrected) Tier-1 priorities.
 # ---------------------------------------------------------------------------
 func _aim(glider: Glider, ctx: Dictionary, dec: Dictionary) -> Vector3:
 	var bp: Vector3 = ctx["bp"]

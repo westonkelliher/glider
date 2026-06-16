@@ -33,7 +33,8 @@ var pitch_v := 0.0
 var roll_v := 0.0
 var yaw_v := 0.0
 
-## Air-brake friction: drops while braked, eases back to 1.0 otherwise.
+## Air-brake friction: smoothed toward a handbrake-driven target (1.0 = full
+## friction at zero brake, 0.08 = nearly frictionless at full brake).
 var air_friction := 1.0
 
 
@@ -161,13 +162,12 @@ func _physics_process(delta: float) -> void:
 	# The smoothed control surfaces drive the craft's rotation about its own
 	# local axes, so control stays relative to the glider's orientation.
 	#
-	## air brake — held brake kills friction so the craft drifts on its momentum.
-	if ctl.braked:
-		air_friction = 0.11
-		pull_in_wings(true)
-	else:
-		air_friction = move_toward(air_friction, 1.0, 200.0 * delta)
-		pull_in_wings(false)
+	## air brake — analog handbrake cuts friction so the craft drifts on its
+	## momentum. Smooth toward the target so the discrete X button (snaps 0->1)
+	## doesn't jolt; the analog trigger already varies smoothly.
+	var target_friction := lerpf(1.0, 0.08, ctl.hand_brake)
+	air_friction = move_toward(air_friction, target_friction, 200.0 * delta)
+	pull_in_wings(ctl.hand_brake)
 	#
 	## current values
 	var current_speed := velocity.length()
@@ -179,9 +179,9 @@ func _physics_process(delta: float) -> void:
 	#var drag_factor := air_friction * tuning.DRAG * current_speed * nose_dir.cross(current_dir).length()
 	var nose_dot := velocity.normalized().dot(nose_dir)
 	var drag_factor := (1 - absf(nose_dot))*air_friction
-	var rrate := 0.5 + 0.1 * sqrt(velocity.length()) #* nose_dot
-	if ctl.braked:
-		rrate = 0.8 + 0.06 * sqrt(velocity.length()) #* nose_dot
+	# handbrake sharpens turn rate: lerp both coefficients from cruise to braked.
+	var rrate := lerpf(0.5, 0.8, ctl.hand_brake) \
+		+ lerpf(0.1, 0.06, ctl.hand_brake) * sqrt(velocity.length()) #* nose_dot
 	#rrate = 1.0
 	#
 	## adjust rotation
@@ -356,13 +356,10 @@ static func interstep(thresh1: float, val1: float, thresh2: float, val2: float, 
 	return lerpf(val1, val2, smoothstep(thresh1, thresh2, variable))
 
 
-func pull_in_wings(inny: bool) -> void:
-	if inny:
-		$Mesh/Q/LWing.position.x = -.4
-		$Mesh/Q/RWing.position.x = 0.4
-	else:
-		$Mesh/Q/LWing.position.x = -.655
-		$Mesh/Q/RWing.position.x = 0.655
+func pull_in_wings(amount: float) -> void:
+	# amount in [0,1]: 0 = wings fully out, 1 = fully pulled in.
+	$Mesh/Q/LWing.position.x = lerpf(-0.655, -0.4, amount)
+	$Mesh/Q/RWing.position.x = lerpf(0.655, 0.4, amount)
 
 
 func set_stats(

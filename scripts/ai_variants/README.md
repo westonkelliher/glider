@@ -37,7 +37,7 @@ func _steer(glider: Glider, aim: Vector3) -> Vector3:
 ## Controls (GliderControls)
 `targets = (pitch, roll, yaw)` each in [-1,1]: +pitch=nose up, +yaw=nose right,
 +roll=bank right. `boost`=add speed along nose. `slow`=[0,1] decel.
-`braked`=HANDBRAKE (sharp turns, costs speed).
+`hand_brake`=[0,1] HANDBRAKE (sharp turns, costs speed).
 
 ## Physics notes
 - Speed comes from POTENTIAL ENERGY (altitude) or boost. To go fast, dive or
