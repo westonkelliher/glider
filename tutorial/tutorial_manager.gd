@@ -25,6 +25,9 @@ const CAM_VELOCITY: int = 2
 ## Loaded after the final stage — a full match against the AI.
 const MATCH_SCENE: String = "res://scenes/main.tscn"
 
+## Returned to when the player exits the tutorials.
+const MENU_SCENE: String = "res://scenes/main_menu.tscn"
+
 enum State { INTRO, PLAYING, COMPLETE }
 
 var glider: Glider = null
@@ -45,13 +48,13 @@ func setup(g: Glider, u: TutorialUI, props: Node3D, cam: Node3D) -> void:
 	ui = u
 	props_root = props
 	camera = cam
-	# Replace the glider's human controller with one that masks untaught powers,
-	# and stop missiles firing in the tutorial (not a taught mechanic).
+	# Replace the glider's human controller with one that masks untaught powers.
 	input_ctl = TutorialController.new()
 	glider.controller = input_ctl
-	glider.allow_missiles = false
 	ui.restart_requested.connect(_on_restart)
 	ui.skip_requested.connect(_on_skip)
+	ui.back_requested.connect(_on_back)
+	ui.exit_requested.connect(_on_exit)
 
 
 func _on_restart() -> void:
@@ -63,6 +66,17 @@ func _on_skip() -> void:
 		_start_match()
 	else:
 		_load_stage(_idx + 1)
+
+
+## Step back to the previous stage. No-op on the first stage.
+func _on_back() -> void:
+	if _idx > 0:
+		_load_stage(_idx - 1)
+
+
+## Leave the tutorials and return to the main menu.
+func _on_exit() -> void:
+	get_tree().change_scene_to_file(MENU_SCENE)
 
 
 ## Leave the tutorial and drop into a full match against the AI.
@@ -81,6 +95,7 @@ func _load_stage(index: int) -> void:
 		_stage = null
 	_idx = clampi(index, 0, STAGE_PATHS.size() - 1)
 	ui.clear_banner()
+	ui.set_back_enabled(_idx > 0)
 	_elapsed = 0.0
 
 	var script: GDScript = load(STAGE_PATHS[_idx]) as GDScript

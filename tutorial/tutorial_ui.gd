@@ -17,8 +17,12 @@ var _intro_showing: bool = false
 var _banner: PanelContainer = null
 var _banner_label: Label = null
 
+var _back_btn: Button = null
+
 signal restart_requested
 signal skip_requested
+signal back_requested
+signal exit_requested
 
 
 func _ready() -> void:
@@ -103,6 +107,10 @@ func _build_buttons() -> void:
 	row.add_theme_constant_override("separation", 12)
 	add_child(row)
 
+	_back_btn = _make_button("◀ Back")
+	_back_btn.pressed.connect(func() -> void: back_requested.emit())
+	row.add_child(_back_btn)
+
 	var restart: Button = _make_button("↺ Restart")
 	restart.pressed.connect(func() -> void: restart_requested.emit())
 	row.add_child(restart)
@@ -110,6 +118,24 @@ func _build_buttons() -> void:
 	var skip: Button = _make_button("Skip ▶")
 	skip.pressed.connect(func() -> void: skip_requested.emit())
 	row.add_child(skip)
+
+	# Exit row, top-left, so it reads as "leave" rather than a stage control.
+	var exit_row: HBoxContainer = HBoxContainer.new()
+	exit_row.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	exit_row.offset_left = 24.0
+	exit_row.offset_top = 24.0
+	add_child(exit_row)
+
+	var quit: Button = _make_button("Exit Tutorials")
+	quit.custom_minimum_size = Vector2(180.0, 48.0)
+	quit.pressed.connect(func() -> void: exit_requested.emit())
+	exit_row.add_child(quit)
+
+
+## Disable the Back button on the first stage (nothing to go back to).
+func set_back_enabled(enabled: bool) -> void:
+	if _back_btn != null:
+		_back_btn.disabled = not enabled
 
 
 func _build_intro() -> void:

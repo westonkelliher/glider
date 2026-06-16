@@ -15,4 +15,37 @@
 * make wipe outs possible against ground (if you tip your nose it flips you over etc)
   * but still fairly easy to land on "wheels"/landing gear / belly
 * visual effect for boost
-* add cieling
+* [DONE] add cieling
+* countdown before kickoff
+* single-player mini games
+* [DONE] add corner and edges where walls meet so there's no right angles (rocket league arena)
+* make AI glider either prefer flying upright or constantly apply a roll
+  towards upright proportional to roll angle away from upright (right now AI
+  flys upside down a lot and it just looks weird)
+* [DONE] apply a pow(,1.5) function to right trigger so half-winging is more drifty
+* 3s countdown before game kickoff start
+* main menu to select between vs AI or tutorials
+* [DONE] limit boost to a certain amount with UI for boost available. after not boosting for 5s it starts recharging
+* make tuning and mode (rl vs pilot) UI buttons, and make start pause and back button reset
+* change boost timer to 8s instead of 5s
+* give AI unlimited but softer boost. it's hard to train the AI on boost management
+* make it so camera is on an arm that "collides" with the floor so we dont clip the camera under the floor
+* in ball cam and velocity cam, allow right stick to tilt the camera (rocket league does this)
+* if player is holding boost buit have none, dont make it waste 1 boost right
+  when boost starts recharging - they need to let go and press it again
+* refactor the way pausing and pre-game countdown stops gameplay. right now you
+  can e.g. waste your boost before game starts. Also make sure all values are reset properly after goals
+* multiple starting positions (rocket league style)
+* reduce the size of the whole arena + goals. it's bigger than rocket league. maybe 30% reduction
+* [DONE] get rid of missile mechanics
+* show scores n stuff during gameplay
+* instant replays on goal
+* [DONE] remove the UI that shows speed and other values
+* move controls UI in the pause menu
+* get rid of rocks and trees in the playing field and cunstruct scenery outside the court
+* early tutorial for roll vs yaw
+* [DONE] go back UI button on tutorials and exit tuts button and anything else reasonable
+* goal zones recessed (such that ball must cross the "line"). also draw the "line"
+* angle of boundary on near the floor where it meets the edges of the goal
+  needs to be fixed (check what rocket league does; it doesn't have to be a
+  smooth curve but you know what I mean)

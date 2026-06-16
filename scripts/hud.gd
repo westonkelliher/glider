@@ -1,17 +1,16 @@
 extends CanvasLayer
 ## Flight readout. Built in code so no scene edit is needed; the glider owns one
-## of these and pushes values to it each physics frame. Top-left = pot/mode/binds
-## (set_readout); top-right = labeled debug stats (set_stats).
+## of these and pushes values to it each physics frame. Top-left = controls/binds
+## (set_readout); bottom-center = boost gauge.
 
 # Controller-first; keyboard/mouse is the dimmed secondary line.
 const BINDS := "[color=aqua][b]Fly[/b][/color]     L-stick pitch + turn · [color=yellow]LB[/color] air-roll (RL) · LB/RB yaw (Pilot)\n" \
-	+ "[color=orange][b]Power[/b][/color]   A launch · B boost · X brake\n" \
+	+ "[color=orange][b]Power[/b][/color]   B boost · X brake\n" \
 	+ "[color=lime][b]Camera[/b][/color]  R-stick aim · R3 free · Y ball / velocity\n" \
 	+ "[color=violet][b]System[/b][/color]  Start pause · Back reset · tuning/scheme in pause menu (T/C)\n" \
 	+ "[color=#888888]K&M  WASD + Q/E · Shift air-roll · Space/RMB/LMB · mouse aim · F/Y · T/C · R reset · Esc[/color]"
 
 var _pot_label: RichTextLabel
-var _stats_label: Label
 var _boost_bar: ProgressBar
 var _boost_caption: Label
 
@@ -28,17 +27,6 @@ func _ready() -> void:
 	_pot_label.add_theme_font_size_override("bold_font_size", 22)
 	_pot_label.add_theme_stylebox_override("normal", _panel_bg())
 	add_child(_pot_label)
-
-	# Top-right, right-aligned so the fixed-decimal values stay pinned to the
-	# edge and don't drift as digits change.
-	_stats_label = Label.new()
-	_stats_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_stats_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_stats_label.offset_top = 8
-	_stats_label.offset_right = -12
-	_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_stats_label.add_theme_font_size_override("font_size", 18)
-	add_child(_stats_label)
 
 	# Boost reserve meter, bottom-center.
 	_boost_bar = ProgressBar.new()
@@ -107,15 +95,5 @@ func set_boost(amount: float, max_amount: float) -> void:
 	_boost_bar.modulate = Color(1, 1, 1, 1) if amount > 0.01 else Color(1, 1, 1, 0.4)
 
 
-func set_readout(pot_height: float, tuning_name: String, scheme_name: String) -> void:
-	_pot_label.text = "[b]pot height:[/b] %.1f m   [b]tuning:[/b] %s   [b]scheme:[/b] %s\n\n%s" \
-		% [pot_height, tuning_name, scheme_name, BINDS]
-
-
-## Render an ordered name->value map as "name: 0.0" lines, fixed to one decimal
-## so on-screen numbers never change width/precision frame to frame.
-func set_stats(stats: Dictionary) -> void:
-	var lines := PackedStringArray()
-	for name: String in stats:
-		lines.append("%s: %.1f" % [name, stats[name]])
-	_stats_label.text = "\n".join(lines)
+func set_readout() -> void:
+	_pot_label.text = BINDS

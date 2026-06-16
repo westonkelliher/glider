@@ -3,7 +3,6 @@ class_name Glider
 
 const HUD := preload("res://scripts/hud.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
-const Missile := preload("res://missile.tscn")
 
 const G := 9.8
 const SURFACE_DEFLECT := 0.7 # visual surface tilt (rad) at full deflection
@@ -73,9 +72,7 @@ var _boost_fx: CPUParticles3D
 ## Which AI brain to load: scripts/ai_variants/ai_<ai_variant>.gd (AI only).
 @export var ai_variant := "base"
 ## World point this glider attacks. Default = BLUE goal (north, +Z).
-@export var target_goal := Vector3(0.0, 15.0, 205.0)
-## Whether the launch action fires a missile. The tutorial disables this.
-var allow_missiles := true
+@export var target_goal := Vector3(0.0, 10.5, 143.5)
 var control_scheme := GliderInput.Scheme.RL
 var _menu: CanvasLayer
 var controller: RefCounted
@@ -204,18 +201,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("toggle_scheme"):
 		toggle_control()
 		_menu.refresh_labels()
-	if event.is_action_pressed("launch") and allow_missiles:
-		launch_missile()
-
-
-func launch_missile() -> void:
-	var missile := Missile.instantiate()
-	get_parent().add_child(missile)
-	missile.global_position = global_position
-	var nose_dir := (transform.basis * Vector3.FORWARD).normalized()
-	var speed := velocity.length()
-	var vel_dir := velocity.normalized()
-	missile.launch(0.6 * speed * vel_dir + 0.6 * speed * nose_dir)
 
 
 func _physics_process(delta: float) -> void:
@@ -342,8 +327,7 @@ func _physics_process(delta: float) -> void:
 		# else the flight model regenerates the old speed next frame.
 		pot_height = position.y + velocity.length_squared() / (2.0 * G)
 	#
-	set_stats(d_h, current_speed, pot_speed, new_speed, nose_dir, current_dir,
-		pot_speed_catchup, pot_dir_catchup)
+	update_hud()
 	#
 	#velocity = Vector3.ZERO# TODONOW uncomment
 	#rotation = Vector3.ZERO# TODONOW uncomment
@@ -441,31 +425,9 @@ func set_wing_extension(ext: float) -> void:
 	$Mesh/Q/RWing.position.x = lerpf(0.12, 0.655, ext)
 
 
-func set_stats(
-	d_h: float,
-	current_speed: float,
-	pot_speed: float,
-	new_speed: float,
-	nose_dir: Vector3,
-	current_dir: Vector3,
-	pot_speed_catchup: float,
-	pot_dir_catchup: float,
-) -> void:
+func update_hud() -> void:
 	if not _hud:
 		return
-	_hud.set_readout(pot_height, tuning.DISPLAY_NAME, GliderInput.name_of(control_scheme))
-	var align := nose_dir.dot(current_dir)
-	_hud.set_stats({
-		"alt": position.y,
-		"d_h": d_h,
-		"pot_h": pot_height,
-		"speed": current_speed,
-		"pot_spd": pot_speed,
-		"new_spd": new_speed,
-		"align": align,
-		"spd_catch": pot_speed_catchup,
-		"dir_catch": pot_dir_catchup,
-		"drag": tuning.DRAG * current_speed * (1.0 - align),
-	})
+	_hud.set_readout()
 	_hud.set_boost(boost_amount, BOOST_MAX)
-	
+
