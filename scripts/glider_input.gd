@@ -35,7 +35,9 @@ static func read_targets(scheme: Scheme) -> Vector3:
 ## trigger's sense, so holding X makes the trigger *apply* brake instead —
 ## i.e. X + full trigger == no-X + no-trigger == full brake (1.0).
 static func read_hand_brake() -> float:
-	var trigger := Input.get_action_strength("air_brake")
+	# pow(1.5) curves the trigger so a half-pull leaves the wings more retracted
+	# (driftier) than a linear map would — full grip still needs a full pull.
+	var trigger := pow(Input.get_action_strength("air_brake"), 1.5)
 	if Input.is_action_pressed("air_brake_flip"):
 		return trigger
 	return 1.0 - trigger
