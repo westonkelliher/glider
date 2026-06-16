@@ -11,8 +11,8 @@ const G := 7.0 # floatier than 9.8
 var mass := 30.0
 var radius := 2.0                  # filled from the collision shape in _ready
 
-const RESTITUTION := 0.6           # bounciness against the glider
-const GROUND_RESTITUTION := 0.6    # bounce off floor / static geometry
+const RESTITUTION := 0.9           # bounciness against the glider
+const GROUND_RESTITUTION := 0.8    # bounce off floor / static geometry
 const AIR_DRAG := 0.11             # fractional speed loss per second in air
 const ROLL_FRICTION := 1.2         # horizontal decel (units/s) while on ground
 
@@ -25,7 +25,7 @@ func _ready() -> void:
 	var shape: Shape3D = $Shape.shape
 	if shape is SphereShape3D:
 		radius = shape.radius * scale.x
-	velocity = Vector3.UP * 24.0
+	velocity = Vector3.UP * 15.0
 
 
 func _physics_process(delta: float) -> void:
